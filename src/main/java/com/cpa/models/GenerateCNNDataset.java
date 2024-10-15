@@ -72,13 +72,13 @@ public class GenerateCNNDataset {
                         }
                     } else {
                         //FLA
-//                List<Integer> requests = user.generateAttackRequest(requestPeruser);
-//                for (int request : requests) {
-//                    Server server = servers.get(ThreadLocalRandom.current().nextInt(numServers));
-//                    user.sendRequest(server, request, currentTime);
-//                    usersforContent[request].add(user.getId());
-//                    currentTime += ThreadLocalRandom.current().nextInt(1, 5); // timestamp
-//                }
+//                        List<Integer> requests = user.generateAttackRequest(requestPeruser);
+//                        for (int request : requests) {
+//                            Server server = servers.get(ThreadLocalRandom.current().nextInt(numServers));
+//                            user.sendRequest(server, request, currentTime);
+//                            usersforContent[request].add(user.getId());
+//                            currentTime += ThreadLocalRandom.current().nextInt(1, 5); // timestamp
+//                        }
                         //flipping attack
                         List<Integer> requests = new ArrayList<>();
 //                        requests = generateZipfRequests(requestPeruser, user.getZipfDistribution());
@@ -94,7 +94,6 @@ public class GenerateCNNDataset {
                             usersforContent[request].add(user.getId());
                             currentTime += ThreadLocalRandom.current().nextInt(1, 5); // 模拟时间流逝
                         }
-//                System.out.println("user attack" + user.getId() + ", requests: " + requests);
                     }
                 }
 
