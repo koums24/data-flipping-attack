@@ -105,7 +105,6 @@ public class GenerateCNNDataset {
                 double[] increaseConstant = new double[numRequestTypes];//increaseConstant for calculate averageRequestIntensity
                 double[] averageRequestIntensity = new double[numRequestTypes]; //M4
 
-                //choose one server
 //            Server server = servers.get(0);
 
                 //tamper distribution attack
