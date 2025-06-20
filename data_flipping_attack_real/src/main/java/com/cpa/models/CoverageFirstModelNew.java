@@ -1,0 +1,628 @@
+package com.cpa.models;
+
+import com.cpa.objectives.EdgeServer;
+import com.cpa.objectives.EdgeUser;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import static com.cpa.models.CoverageFirstModel.selectRandomPercentage;
+import static com.cpa.models.CoverageFirstModel.tamperDistributionOnServerMap;
+
+
+public class CoverageFirstModelNew {
+    private int ServersNumber;
+    private int[] OriginSpaceLimits;
+    private int DataNumber;
+    private List<EdgeUser> Users;
+    private List<EdgeServer> Servers;
+    private int Time;
+    private List<List<Integer>> RequestsList;
+    private double AttackRatio;
+    private double BenefitUnitCost = 0.004;
+    double DelayEdgeEdge = 0.01;
+    double DelayEdgeCloud = 0.2;
+
+    private List<Double> TotalLatency;
+    private List<Double> AverageLatency;
+    private List<Double> CoveragedUsers;
+    private List<Double> Times;
+    private List<Double> HitRatio;
+    private List<Double> HitRatioAttacked;
+    private List<Double> TotalBenefits;
+
+    private List<List<Integer>> CurrentStorage;
+    private int[][] DistanceMetrix;
+    private int[][] ServerDataDistance;
+    private boolean[][] ServerDataFromCloud;
+    private int[] DataSizes;
+
+
+    private int LatencyLimit;
+
+    private int CurrentTime;
+
+    private int MinSize = 99999;
+
+    public CoverageFirstModelNew(int serversNumber, int[][] userBenefits, int[][] distanceMetrix, int[] spaceLimits,
+                             int[] dataSizes, List<EdgeUser> users, List<EdgeServer> servers, int dataNumber, int latencyLimit, int time,
+                             List<List<Integer>> requestsList, List<List<Integer>> currentStorage, double attackRatio) {
+        ServersNumber = serversNumber;
+        OriginSpaceLimits = spaceLimits;
+        LatencyLimit = latencyLimit;
+        DistanceMetrix = distanceMetrix;
+
+        DataSizes = dataSizes;
+        AttackRatio = attackRatio;
+
+        DataNumber = dataNumber;
+        Users = users;
+        Servers = servers;
+
+        Time = time;
+        RequestsList = requestsList;
+
+        ServerDataDistance = new int[serversNumber][dataNumber];
+        ServerDataFromCloud = new boolean[serversNumber][dataNumber];
+
+        CurrentStorage = new ArrayList<>();
+        for (int data = 0; data < DataNumber; data++) {
+            CurrentStorage.add(new ArrayList<>());
+            for (int s : currentStorage.get(data)) {
+                CurrentStorage.get(data).add(s);
+            }
+        }
+
+        TotalLatency = new ArrayList<>();
+        AverageLatency = new ArrayList<>();
+        TotalBenefits = new ArrayList<>();
+        CoveragedUsers = new ArrayList<>();
+        Times = new ArrayList<>();
+        HitRatio = new ArrayList<>();
+        HitRatioAttacked = new ArrayList<>();
+
+        for (int size : DataSizes) {
+            if (size < MinSize)
+                MinSize = size;
+        }
+
+        updateServerDataDistance();
+    }
+
+    /**
+     * 通过查找距离最近的缓存server，更新server到data的距离，并判断data是否需要从云端获取
+     */
+    public void updateServerDataDistance() {
+        for (int i = 0; i < ServersNumber; i++) {
+            for (int d = 0; d < DataNumber; d++) {
+                int distance = LatencyLimit;
+                boolean isFromCloud = true;
+                //遍历当前存储数据的所有服务器，找到距离服务器 i 最近的服务器 s
+                for (int s : CurrentStorage.get(d)) {
+                    if (DistanceMetrix[i][s] <= distance) {
+                        distance = DistanceMetrix[i][s];
+                        isFromCloud = false;
+                    }
+                }
+                ServerDataDistance[i][d] = distance;
+                ServerDataFromCloud[i][d] = isFromCloud;
+            }
+        }
+    }
+
+    public void runCoverage() {
+        CurrentTime = 0;
+
+        // int totalBenenfits = 0;
+
+        while (CurrentTime < Time) {
+            Instant start = Instant.now();
+            double benefit = 0;
+            double coveredUsers = 0;
+
+            // BCU bcu = calculateTotalBenefits(CurrentStorage);
+            // double currentBenefit = bcu.benefit;
+
+            // if (totalBenenfits >= K * currentBenefit) {
+            // totalBenenfits = 0;
+
+            CurrentStorage.clear();
+
+            List<List<Integer>> strategy = getCoverageEffectiveStrategy();
+            BCU newBcu = calculateTotalBenefits(strategy);
+
+            CurrentStorage.addAll(strategy);
+            benefit = newBcu.benefit;
+            coveredUsers = newBcu.cu;
+            // } else {
+            // totalBenenfits += currentBenefit;
+            // benefit = currentBenefit;
+            // coveredUsers = bcu.cu;
+            // }
+
+            Instant end = Instant.now();
+            double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
+
+            updateServerDataDistance();
+
+//            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
+//            TotalLatency.add(latency);
+
+            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
+            double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
+
+            TotalLatency.add(totalLatency);
+            AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
+            // MigrationCosts.add(cost);
+            // Objs.add(benefit - cost);
+            // AverageRevenue.add(benefit - cost / coveredUsers);
+            TotalBenefits.add(benefit);
+            CoveragedUsers.add(coveredUsers);
+            HitRatio.add(coveredUsers / Users.size());
+            HitRatioAttacked.add(0.0);
+            Times.add(duration);
+
+            System.out.println("---- CFMsafe ---- " + CurrentTime);
+            System.out.println("Total Latency: " + totalLatency);
+            System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
+            System.out.println("Benefits: " + benefit);
+            // System.out.println("MCost: " + cost);
+            System.out.println("Coverd:" + coveredUsers);
+            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
+            // System.out.println("Time:" + duration);
+            // System.out.println();
+
+            CurrentTime++;
+        }
+
+        // int totalR = 0;
+        // for (double obj : Objs) {
+        // totalR += obj;
+        // }
+        // System.out.println("Total R = " + totalR);
+        // System.out.println();
+    }
+
+    public void runCoverageAttack() {
+        CurrentTime = 0;
+
+        // int totalBenenfits = 0;
+
+        while (CurrentTime < Time) {
+            Instant start = Instant.now();
+            double benefit = 0;
+            double coveredUsers = 0;
+
+            // BCU bcu = calculateTotalBenefits(CurrentStorage);
+            // double currentBenefit = bcu.benefit;
+
+            // if (totalBenenfits >= K * currentBenefit) {
+            // totalBenenfits = 0;
+
+            CurrentStorage.clear();
+            // TODO Attack
+            //备份user的datalist
+            List<List<Integer>> backupDataListOnUser = new ArrayList<>();
+            for (int i = 0; i < Users.size(); i++) {
+                backupDataListOnUser.add(new ArrayList<>());
+            }
+            for (EdgeUser u : Users) {
+                backupDataListOnUser.set(u.id, new ArrayList<>(u.dataList));
+            }
+//            System.out.println("\n");
+//            System.out.println("backupDataListOnUser: " + backupDataListOnUser);
+
+            //TODO attack START
+            //data list collect by server
+            List<List<Integer>> requestOnServer = new ArrayList<>();
+            List<List<Integer>> fromUser = new ArrayList<>();
+            for (int i = 0; i < ServersNumber; i++) {
+                requestOnServer.add(new ArrayList<>());
+            }
+            for (int i = 0; i < ServersNumber; i++) {
+                fromUser.add(new ArrayList<>());
+            }
+
+            for (EdgeUser u : Users) {
+                if (!RequestsList.get(CurrentTime).contains(u.id))
+                    continue;
+                Random random = new Random();
+                int data = u.dataList.get(CurrentTime);
+                //user send nearest server
+                int destServer = (u.nearEdgeServers.size() - 1) / 2;
+                requestOnServer.get(u.nearEdgeServers.get(destServer)).add(data);
+                //for each  server, record user sending request CurrentTime
+                fromUser.get(u.nearEdgeServers.get(destServer)).add(u.id);
+            }
+
+//            System.out.println("LFM requestOnServer safe: " + requestOnServer);
+//            System.out.println("LFM fromUser safe: " + fromUser);
+
+            // attack server number by attack ratio
+            int[] attackServerList = selectRandomPercentage(ServersNumber, AttackRatio);
+            flipAttack(attackServerList, requestOnServer, fromUser);
+
+            //stragtegy
+            List<List<Integer>> strategy = getCoverageEffectiveStrategy();
+
+            System.out.println("Time " + CurrentTime + " strategy: " + strategy);
+            // 计算latency前 恢复原request list
+            for (EdgeUser user : Users) {
+                // 获取用户的 dataList
+                List<Integer> userDataList = Users.get(user.id).dataList;
+
+                // 清空 userDataList，不影响 backupDataListOnUser 中的数据
+                userDataList.clear();
+
+                // 从 backupDataListOnUser 获取独立的副本进行添加
+                List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
+                userDataList.addAll(backupList);
+            }
+
+            //TODO attack end
+
+            BCU newBcu = calculateTotalBenefits(strategy);
+
+            CurrentStorage.addAll(strategy);
+            benefit = newBcu.benefit;
+            coveredUsers = newBcu.cu;
+            // } else {
+            // totalBenenfits += currentBenefit;
+            // benefit = currentBenefit;
+            // coveredUsers = bcu.cu;
+            // }
+
+            Instant end = Instant.now();
+            double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
+
+            updateServerDataDistance();
+
+//            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
+//            TotalLatency.add(latency);
+
+            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
+            double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
+            double hitRatioAttacked = calculateHitRatioAttacked(strategy, attackServerList, requestOnServer, fromUser);
+            TotalLatency.add(totalLatency);
+            AverageLatency.add(latency / RequestsList.get(CurrentTime).size());
+
+            // MigrationCosts.add(cost);
+            // Objs.add(benefit - cost);
+            // AverageRevenue.add(benefit - cost / coveredUsers);
+            TotalBenefits.add(benefit);
+            CoveragedUsers.add(coveredUsers);
+            HitRatio.add(coveredUsers / Users.size());
+            HitRatioAttacked.add(hitRatioAttacked);
+//            AttackedHitRatio.add(0.0);
+            Times.add(duration);
+
+            System.out.println("---- CFMattack ---- " + CurrentTime);
+            // System.out.println("Revenue: " + (benefit - cost));
+            System.out.println("Total Latency: " + totalLatency);
+            System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
+            System.out.println("Benefits: " + benefit);
+            // System.out.println("MCost: " + cost);
+            System.out.println("Coverd:" + coveredUsers);
+            System.out.println("HitRatio Attacked:" + hitRatioAttacked);
+            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
+            // System.out.println("Time:" + duration);
+            // System.out.println();
+
+            CurrentTime++;
+        }
+
+        // int totalR = 0;
+        // for (double obj : Objs) {
+        // totalR += obj;
+        // }
+        // System.out.println("Total R = " + totalR);
+        // System.out.println();
+    }
+
+    public List<List<Integer>> getCoverageEffectiveStrategy() {
+        int[] spaceLimits = new int[ServersNumber];
+
+        List<List<Integer>> results = new ArrayList<>();
+        for (int data = 0; data < DataNumber; data++) {
+            results.add(new ArrayList<>());
+        }
+
+        for (int m = 0; m < ServersNumber; m++) {
+            spaceLimits[m] = OriginSpaceLimits[m];
+        }
+
+        DataBenefitsOnServer dbos = getServerAndDataWithMaximumCoveragePerCacheUnit(results, spaceLimits);
+
+        while (isSpacesAvailable(spaceLimits) && dbos != null) {
+
+            results.get(dbos.data).add(dbos.server);
+
+            spaceLimits[dbos.server] -= DataSizes[dbos.data];
+            dbos = getServerAndDataWithMaximumCoveragePerCacheUnit(results, spaceLimits);
+        }
+
+         return fillUpStorage(results, spaceLimits);
+//        return results;
+    }
+
+    public List<List<Integer>> fillUpStorage(List<List<Integer>> strategy, int[] spaceLimits) {
+        // random add data into idol spaces
+        if (isSpacesAvailable(spaceLimits)) {
+            for (int i = 0; i < spaceLimits.length; i++) {
+                List<Integer> pendingList = new ArrayList<>();
+                if (spaceLimits[i] >= MinSize) {
+                    for (int data = 0; data < DataNumber; data++) {
+                        if (strategy.get(data).contains(i) || DataSizes[data] > spaceLimits[i])
+                            continue;
+
+                        if (ServerDataFromCloud[i][data]) {
+                            strategy.get(data).add(i);
+                            spaceLimits[i] -= DataSizes[data];
+                        } else {
+                            pendingList.add(data);
+                        }
+                    }
+                    if (spaceLimits[i] >= MinSize) {
+                        for (int data = 0; data < DataNumber; data++) {
+                            if (strategy.get(data).contains(i) || DataSizes[data] > spaceLimits[i])
+                                continue;
+                            strategy.get(data).add(i);
+                            spaceLimits[i] -= DataSizes[data];
+                        }
+                    }
+                }
+            }
+        }
+        return strategy;
+    }
+
+    // public class Strategy {
+    // List<List<Integer>> dataCacheList = new ArrayList<>();
+    // double totalBenefits;
+    // int cu;
+    // }
+
+    private DataBenefitsOnServer getServerAndDataWithMaximumBenefitsPerCacheUnit(List<List<Integer>> dataCacheList,
+                                                                                 int[] spaceLimits) {
+        // List<DataPopularityOnServer> dataPopularityOnServerList = new ArrayList<>();
+
+        double currentBPC = 0;
+        // double beforeBenefit = calculateTotalBenefits(dataCacheList).benefit;
+        // double currentBenefit = 0;
+        int s = -1;
+        int d = -1;
+
+        double currentBenefit = calculateTotalBenefits(dataCacheList).benefit;
+
+        for (EdgeServer server : Servers) {
+            if (spaceLimits[server.id] == 0)
+                continue;
+            for (int data = 0; data < DataNumber; data++) {
+                if (dataCacheList.get(data).contains(server.id) || spaceLimits[server.id] < DataSizes[data])
+                    continue;
+
+                dataCacheList.get(data).add(server.id);
+
+                BCU b = calculateTotalBenefits(dataCacheList);
+
+                dataCacheList.get(data).remove(dataCacheList.get(data).size() - 1);
+
+                // currentBenefit = b.benefit;
+
+                // if (currentBenefit - beforeBenefit == 0)
+                // continue;
+
+                double bpc = (b.benefit - currentBenefit) / DataSizes[data];
+                if (currentBPC < bpc) {
+                    currentBPC = bpc;
+                    s = server.id;
+                    d = data;
+                }
+
+            }
+        }
+
+        if (currentBPC == 0)
+            return null;
+
+        DataBenefitsOnServer dataPopularityOnServer = new DataBenefitsOnServer();
+        dataPopularityOnServer.server = s;
+        dataPopularityOnServer.data = d;
+
+        return dataPopularityOnServer;
+    }
+
+    private double calculateHitRatioAttacked(List<List<Integer>> storages, int[] attackServerList, List<List<Integer>> requestOnServer, List<List<Integer>> fromUser) {
+
+        double total = 0;
+        int cu = 0;
+        // System.out.println(RequestsList.get(CurrentTime).size());
+        for (int i = 0; i < attackServerList.length; i++) {
+            int attackServer = attackServerList[i];
+            List<Integer> requestData = requestOnServer.get(attackServer);
+            List<Integer> userSendingReq = fromUser.get(attackServer);
+            for (int j = 0; j < requestData.size(); j++) {
+                total++; //被attack server收到的请求总数
+                boolean isFromCloud = true;
+                int data = requestData.get(j);
+                List<Integer> serverList = storages.get(data);
+                for (int sid : Users.get(userSendingReq.get(j)).nearEdgeServers) {
+                    if (serverList.contains(sid) && ServerDataFromCloud[sid][data] == false) {
+                        isFromCloud = false;
+                    }
+                }
+
+                if (isFromCloud == false) {
+                    cu++;
+                }
+            }
+        }
+
+        return (double) cu / total;
+    }
+
+
+    private DataBenefitsOnServer getServerAndDataWithMaximumCoveragePerCacheUnit(List<List<Integer>> dataCacheList,
+                                                                                 int[] spaceLimits) {
+//         List<DataPopularityOnServer> dataPopularityOnServerList = new ArrayList<>();
+
+        double currentCPC = 0;
+        // double beforeBenefit = calculateTotalBenefits(dataCacheList).benefit;
+        // double currentBenefit = 0;
+        int s = -1;
+        int d = -1;
+
+        double currentCover = calculateTotalBenefits(dataCacheList).cu;
+
+        for (EdgeServer server : Servers) {
+            if (spaceLimits[server.id] == 0)
+                continue;
+            for (int data = 0; data < DataNumber; data++) {
+                if (dataCacheList.get(data).contains(server.id) || spaceLimits[server.id] < DataSizes[data])
+                    continue;
+
+                dataCacheList.get(data).add(server.id);
+
+                BCU b = calculateTotalBenefits(dataCacheList);
+
+                dataCacheList.get(data).remove(dataCacheList.get(data).size() - 1);
+
+//                 currentBenefit = b.benefit;
+//
+//                 if (currentBenefit - beforeBenefit == 0)
+//                 continue;
+
+                double cpc = (b.cu - currentCover) / DataSizes[data];
+                if (currentCPC < cpc) {
+                    currentCPC = cpc;
+                    s = server.id;
+                    d = data;
+                }
+
+            }
+        }
+
+        if (currentCPC == 0)
+            return null;
+
+        DataBenefitsOnServer dataPopularityOnServer = new DataBenefitsOnServer();
+        dataPopularityOnServer.server = s;
+        dataPopularityOnServer.data = d;
+
+        return dataPopularityOnServer;
+    }
+
+    public class BCU {
+        public double benefit;
+        public int cu;
+    }
+
+    private BCU calculateTotalBenefits(List<List<Integer>> newStorages) {
+        BCU bcu = new BCU();
+
+        double total = 0;
+        int cu = 0;
+
+        // System.out.println(RequestsList.get(CurrentTime).size());
+
+        for (EdgeUser u : Users) {
+            if (!RequestsList.get(CurrentTime).contains(u.id))
+                continue;
+
+            int data = u.dataList.get(CurrentTime);
+            List<Integer> serverList = newStorages.get(data);
+
+            int benefit = 0;
+            boolean isFromCloud = true;
+            for (int sid : u.nearEdgeServers) {
+                if (serverList.contains(sid) && ServerDataFromCloud[sid][data] == false) {
+                    isFromCloud = false;
+                    int b = LatencyLimit - ServerDataDistance[sid][data];
+                    if (b > benefit) {
+                        benefit = b;
+                    }
+                }
+            }
+            total += benefit * BenefitUnitCost;
+            if (isFromCloud == false) {
+                cu++;
+            }
+
+            // System.out.println("User " + u.id + " - Benefit " + benefit *
+            // BenefitUnitCost);
+        }
+
+        bcu.benefit = total;
+        bcu.cu = cu;
+
+        return bcu;
+    }
+
+    private void flipAttack(int[] attackServerList, List<List<Integer>> requestOnServer, List<List<Integer>> fromUser) {
+
+        for (int k = 0; k < attackServerList.length; k++) {
+            //tamper distribution on server
+//                List<Integer> requestListAttakced = tamperDistributionOnServer(requestOnServer, attackServerList[k]);
+            Map<Integer, Integer> swapMap = tamperDistributionOnServerMap(DataNumber, requestOnServer, attackServerList[k]);
+//                System.out.println("requestListAttakced" + requestListAttakced);
+            //通过sever上对调过的request 篡改user的datalist
+//                for (Integer coverUser : Servers.get(attackServerList[k]).directCoveredUsers) {
+            for (Integer tamperuser : fromUser.get(attackServerList[k])) {
+                if (RequestsList.get(CurrentTime).contains(tamperuser)) {
+                    List<Integer> dataList = Users.get(tamperuser).dataList;
+                    dataList.set(CurrentTime, swapMap.get(dataList.get(CurrentTime)));
+//                        dataList = Users.get(tamperuser).dataList;
+//                        System.out.println("dataList " + tamperuser + " after attack: " + dataList);
+                }
+            }
+        }
+    }
+
+
+    private boolean isSpacesAvailable(int[] spaceLimits) {
+
+        for (int i : spaceLimits) {
+            if (i >= MinSize)
+                return true;
+        }
+
+        return false;
+    }
+
+    private class DataBenefitsOnServer {
+        public int server;
+        public int data;
+    }
+
+    public List<Double> getTimes() {
+        return Times;
+    }
+
+    public List<Double> getTotalLatency() {
+        return TotalLatency;
+    }
+
+    public List<Double> getCoveragedUsers() {
+        return CoveragedUsers;
+    }
+
+    public List<Double> getHitRatio() {
+        return HitRatio;
+    }
+
+    public List<Double> getHitRatioAttacked() {
+        return HitRatioAttacked;
+    }
+
+    public List<Double> getAverageLatency() {
+        return AverageLatency;
+    }
+
+    public List<Double> getTotalBenefits() {
+        return TotalBenefits;
+    }
+}
