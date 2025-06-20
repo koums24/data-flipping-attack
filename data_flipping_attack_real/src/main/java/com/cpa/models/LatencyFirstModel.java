@@ -95,16 +95,12 @@ public class LatencyFirstModel {
 
         updateServerDataDistance();
     }
-
-    /**
-     * 通过查找距离最近的缓存server，更新server到data的距离，并判断data是否需要从云端获取
-     */
+    
     public void updateServerDataDistance() {
         for (int i = 0; i < ServersNumber; i++) {
             for (int d = 0; d < DataNumber; d++) {
                 int distance = LatencyLimit;
                 boolean isFromCloud = true;
-                //遍历当前存储数据的所有服务器，找到距离服务器 i 最近的服务器 s
                 for (int s : CurrentStorage.get(d)) {
                     if (DistanceMetrix[i][s] <= distance) {
                         distance = DistanceMetrix[i][s];
@@ -128,14 +124,7 @@ public class LatencyFirstModel {
             double benefit = 0;
             double coveredUsers = 0;
             double latency = 0;
-
-            // BCU bcu = calculateTotalBenefits(CurrentStorage);
-            // double currentBenefit = bcu.benefit;
-
-            // if (totalBenenfits >= K * currentBenefit) {
-            // totalBenenfits = 0;
-
-            CurrentStorage.clear();
+             CurrentStorage.clear();
 
             List<List<Integer>> strategy = getCostEffectiveStrategy();
             BCU newBcu = calculateTotalBenefits(strategy);
@@ -144,27 +133,17 @@ public class LatencyFirstModel {
             benefit = newBcu.benefit;
             coveredUsers = newBcu.cu;
             latency = newBcu.latency;
-            // } else {
-            // totalBenenfits += currentBenefit;
-            // benefit = currentBenefit;
-            // coveredUsers = bcu.cu;
-            // }
 
             Instant end = Instant.now();
             double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
 
             updateServerDataDistance();
 
-//            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
-//            TotalLatency.add(latency);
-
             double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
 
             TotalLatency.add(totalLatency);
             AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
-            // MigrationCosts.add(cost);
-            // Objs.add(benefit - cost);
-            // AverageRevenue.add(benefit - cost / coveredUsers);
+
             TotalBenefits.add(benefit);
             CoveragedUsers.add(coveredUsers);
             HitRatio.add(coveredUsers / Users.size());
@@ -175,21 +154,10 @@ public class LatencyFirstModel {
             System.out.println("Total Latency: " + totalLatency);
             System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
             System.out.println("Benefits: " + benefit);
-            // System.out.println("MCost: " + cost);
-            System.out.println("Coverd:" + coveredUsers);
-            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
-            // System.out.println("Time:" + duration);
-            // System.out.println();
 
+            System.out.println("Coverd:" + coveredUsers);
             CurrentTime++;
         }
-
-        // int totalR = 0;
-        // for (double obj : Objs) {
-        // totalR += obj;
-        // }
-        // System.out.println("Total R = " + totalR);
-        // System.out.println();
     }
 
     //attack
@@ -203,16 +171,8 @@ public class LatencyFirstModel {
             double benefit = 0;
             double coveredUsers = 0;
             double latency = 0;
-
-            // BCU bcu = calculateTotalBenefits(CurrentStorage);
-            // double currentBenefit = bcu.benefit;
-
-            // if (totalBenenfits >= K * currentBenefit) {
-            // totalBenenfits = 0;
-
             CurrentStorage.clear();
             // TODO Attack
-            //备份user的datalist
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -220,8 +180,7 @@ public class LatencyFirstModel {
             for (EdgeUser u : Users) {
                 backupDataListOnUser.set(u.id, new ArrayList<>(u.dataList));
             }
-//            System.out.println("\n");
-//            System.out.println("backupDataListOnUser: " + backupDataListOnUser);
+
 
             //TODO attack START
             //data list collect by server
@@ -246,8 +205,6 @@ public class LatencyFirstModel {
                 fromUser.get(u.nearEdgeServers.get(destServer)).add(u.id);
             }
 
-//            System.out.println("LFM requestOnServer safe: " + requestOnServer);
-//            System.out.println("LFM fromUser safe: " + fromUser);
 
             // attack server number by attack ratio
             int[] attackServerList = selectRandomPercentage(ServersNumber, AttackRatio);
@@ -255,17 +212,11 @@ public class LatencyFirstModel {
 
             //stragtegy
             List<List<Integer>> strategy = getCostEffectiveStrategy();
-
             System.out.println("Time " + CurrentTime + " strategy: " + strategy);
-            // 计算latency前 恢复原request list
+            
             for (EdgeUser user : Users) {
-                // 获取用户的 dataList
                 List<Integer> userDataList = Users.get(user.id).dataList;
-
-                // 清空 userDataList，不影响 backupDataListOnUser 中的数据
                 userDataList.clear();
-
-                // 从 backupDataListOnUser 获取独立的副本进行添加
                 List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                 userDataList.addAll(backupList);
             }
@@ -273,33 +224,24 @@ public class LatencyFirstModel {
             //TODO attack end
 
             BCU newBcu = calculateTotalBenefits(strategy);
-
             CurrentStorage.addAll(strategy);
             benefit = newBcu.benefit;
             coveredUsers = newBcu.cu;
             latency = newBcu.latency;
-            // } else {
-            // totalBenenfits += currentBenefit;
-            // benefit = currentBenefit;
-            // coveredUsers = bcu.cu;
-            // }
-
+  
             Instant end = Instant.now();
             double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
 
             updateServerDataDistance();
 
 //            TotalLatency.add(latency);
-
 //            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
             double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
             double hitRatioAttacked = calculateHitRatioAttacked(strategy, attackServerList, requestOnServer, fromUser);
             TotalLatency.add(totalLatency);
             AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
 
-            // MigrationCosts.add(cost);
-            // Objs.add(benefit - cost);
-            // AverageRevenue.add(benefit - cost / coveredUsers);
+
             TotalBenefits.add(benefit);
             CoveragedUsers.add(coveredUsers);
             HitRatio.add(coveredUsers / Users.size());
@@ -308,26 +250,16 @@ public class LatencyFirstModel {
             Times.add(duration);
 
             System.out.println("---- LFMattack ---- " + CurrentTime);
-            // System.out.println("Revenue: " + (benefit - cost));
             System.out.println("Total Latency: " + totalLatency);
             System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
             System.out.println("Benefits: " + benefit);
-            // System.out.println("MCost: " + cost);
             System.out.println("Coverd:" + coveredUsers);
             System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
-            // System.out.println("Time:" + duration);
-            // System.out.println();
 
             CurrentTime++;
         }
 
-        // int totalR = 0;
-        // for (double obj : Objs) {
-        // totalR += obj;
-        // }
-        // System.out.println("Total R = " + totalR);
-        // System.out.println();
+
     }
 
     //random modification attack
@@ -341,16 +273,9 @@ public class LatencyFirstModel {
             double benefit = 0;
             double coveredUsers = 0;
             double latency = 0;
-
-            // BCU bcu = calculateTotalBenefits(CurrentStorage);
-            // double currentBenefit = bcu.benefit;
-
-            // if (totalBenenfits >= K * currentBenefit) {
-            // totalBenenfits = 0;
-
+ 
             CurrentStorage.clear();
             // TODO Attack
-            //备份user的datalist
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -358,9 +283,6 @@ public class LatencyFirstModel {
             for (EdgeUser u : Users) {
                 backupDataListOnUser.set(u.id, new ArrayList<>(u.dataList));
             }
-//            System.out.println("\n");
-//            System.out.println("backupDataListOnUser: " + backupDataListOnUser);
-
             //TODO attack START
             //data list collect by server
             List<List<Integer>> requestOnServer = new ArrayList<>();
@@ -383,9 +305,6 @@ public class LatencyFirstModel {
                 //for each  server, record user sending request CurrentTime
                 fromUser.get(u.nearEdgeServers.get(destServer)).add(u.id);
             }
-
-//            System.out.println("LFM requestOnServer safe: " + requestOnServer);
-//            System.out.println("LFM fromUser safe: " + fromUser);
 
             // attack server number by attack ratio
             int[] attackServerList = selectRandomPercentage(ServersNumber, AttackRatio);
@@ -396,85 +315,52 @@ public class LatencyFirstModel {
             List<List<Integer>> strategy = getCostEffectiveStrategy();
 
             System.out.println("Time " + CurrentTime + " strategy: " + strategy);
-            // 计算latency前 恢复原request list
+            
             for (EdgeUser user : Users) {
-                // 获取用户的 dataList
                 List<Integer> userDataList = Users.get(user.id).dataList;
-
-                // 清空 userDataList，不影响 backupDataListOnUser 中的数据
                 userDataList.clear();
-
-                // 从 backupDataListOnUser 获取独立的副本进行添加
                 List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                 userDataList.addAll(backupList);
             }
-
             //TODO attack end
-
             BCU newBcu = calculateTotalBenefits(strategy);
 
             CurrentStorage.addAll(strategy);
             benefit = newBcu.benefit;
             coveredUsers = newBcu.cu;
             latency = newBcu.latency;
-            // } else {
-            // totalBenenfits += currentBenefit;
-            // benefit = currentBenefit;
-            // coveredUsers = bcu.cu;
-            // }
-
             Instant end = Instant.now();
             double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
 
             updateServerDataDistance();
 
 //            TotalLatency.add(latency);
-
 //            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
             double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
             double hitRatioAttacked = calculateHitRatioAttacked(strategy, attackServerList, requestOnServer, fromUser);
             TotalLatency.add(totalLatency);
             AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
 
-            // MigrationCosts.add(cost);
-            // Objs.add(benefit - cost);
-            // AverageRevenue.add(benefit - cost / coveredUsers);
             TotalBenefits.add(benefit);
             CoveragedUsers.add(coveredUsers);
             HitRatio.add(coveredUsers / Users.size());
             HitRatioAttacked.add(hitRatioAttacked);
 //            AttackedHitRatio.add(0.0);
             Times.add(duration);
-
             System.out.println("---- LFMattack ---- " + CurrentTime);
-            // System.out.println("Revenue: " + (benefit - cost));
             System.out.println("Total Latency: " + totalLatency);
             System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
             System.out.println("Benefits: " + benefit);
-            // System.out.println("MCost: " + cost);
             System.out.println("Coverd:" + coveredUsers);
             System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
-            // System.out.println("Time:" + duration);
-            // System.out.println();
-
             CurrentTime++;
         }
-
-        // int totalR = 0;
-        // for (double obj : Objs) {
-        // totalR += obj;
-        // }
-        // System.out.println("Total R = " + totalR);
-        // System.out.println();
     }
 
-    //有攻击 new defense
     public void runLatencyAttackDefense() {
         CurrentTime = 0;
 
         // int totalBenenfits = 0;
-
         while (CurrentTime < Time) {
             Instant start = Instant.now();
             double benefit = 0;
@@ -483,7 +369,6 @@ public class LatencyFirstModel {
 
             CurrentStorage.clear();
             // TODO Attack
-            //备份user的datalist
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -491,9 +376,6 @@ public class LatencyFirstModel {
             for (EdgeUser u : Users) {
                 backupDataListOnUser.set(u.id, new ArrayList<>(u.dataList));
             }
-//            System.out.println("\n");
-//            System.out.println("backupDataListOnUser: " + backupDataListOnUser);
-
             //TODO attack START
             //data list collect by server
             List<List<Integer>> requestOnServer = new ArrayList<>();
@@ -516,10 +398,6 @@ public class LatencyFirstModel {
                 //for each  server, record user sending request CurrentTime
                 fromUser.get(u.nearEdgeServers.get(destServer)).add(u.id);
             }
-
-//            System.out.println("LFM requestOnServer safe: " + requestOnServer);
-//            System.out.println("LFM fromUser safe: " + fromUser);
-
             // attack server number by attack ratio
             int[] attackServerList = selectRandomPercentage(ServersNumber, AttackRatio);
 //            flipAttack(attackServerList, requestOnServer, fromUser);
@@ -549,24 +427,18 @@ public class LatencyFirstModel {
             System.out.println("LFM fromUser safe: " + fromUser);
             //TODO defense
             addNoiseDefense(requestOnServer, fromUser);
-
             //stragtegy
             List<List<Integer>> strategy = getCostEffectiveStrategy();
 
             System.out.println("Time " + CurrentTime + " strategy: " + strategy);
             //TODO 计算latency前 恢复原request list
             for (EdgeUser user : Users) {
-                // 获取用户的 dataList
+               
                 List<Integer> userDataList = Users.get(user.id).dataList;
-
-                // 清空 userDataList，不影响 backupDataListOnUser 中的数据
                 userDataList.clear();
-
-                // 从 backupDataListOnUser 获取独立的副本进行添加
                 List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                 userDataList.addAll(backupList);
             }
-
             //TODO attack end
 
             BCU newBcu = calculateTotalBenefits(strategy);
@@ -575,58 +447,38 @@ public class LatencyFirstModel {
             benefit = newBcu.benefit;
             coveredUsers = newBcu.cu;
             latency = newBcu.latency;
-            // } else {
-            // totalBenenfits += currentBenefit;
-            // benefit = currentBenefit;
-            // coveredUsers = bcu.cu;
-            // }
-
+  
             Instant end = Instant.now();
             double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
 
             updateServerDataDistance();
-
-//            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
-//            TotalLatency.add(latency);
 
             double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
             double hitRatioAttacked = calculateHitRatioAttacked(strategy, attackServerList, requestOnServer, fromUser);
             TotalLatency.add(totalLatency);
             AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
 
-            // MigrationCosts.add(cost);
-            // Objs.add(benefit - cost);
-            // AverageRevenue.add(benefit - cost / coveredUsers);
             TotalBenefits.add(benefit);
             CoveragedUsers.add(coveredUsers);
             HitRatio.add(coveredUsers / Users.size());
             HitRatioAttacked.add(hitRatioAttacked);
 //            AttackedHitRatio.add(0.0);
             Times.add(duration);
-
             System.out.println("---- LFMattack defense addnoise ---- " + CurrentTime);
             // System.out.println("Revenue: " + (benefit - cost));
             System.out.println("Total Latency: " + totalLatency);
             System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
             System.out.println("Benefits: " + benefit);
-            // System.out.println("MCost: " + cost);
             System.out.println("Coverd:" + coveredUsers);
             System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
-            // System.out.println("Time:" + duration);
-            // System.out.println();
-
             CurrentTime++;
         }
-
     }
 
-    //有攻击 传统防御
     public void runLatencyDefenseConvention() {
         CurrentTime = 0;
 
         // int totalBenenfits = 0;
-
         while (CurrentTime < Time) {
             Instant start = Instant.now();
             double benefit = 0;
@@ -635,7 +487,7 @@ public class LatencyFirstModel {
 
             CurrentStorage.clear();
             // TODO Attack
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -643,9 +495,6 @@ public class LatencyFirstModel {
             for (EdgeUser u : Users) {
                 backupDataListOnUser.set(u.id, new ArrayList<>(u.dataList));
             }
-//            System.out.println("\n");
-//            System.out.println("originalDataListOnUser: " + backupDataListOnUser);
-
             //TODO attack START
             //data list collect by server
             List<List<Integer>> requestOnServer = new ArrayList<>();
@@ -669,9 +518,6 @@ public class LatencyFirstModel {
                 fromUser.get(u.nearEdgeServers.get(destServer)).add(u.id);
             }
 
-//            System.out.println("LFM requestOnServer safe: " + requestOnServer);
-//            System.out.println("LFM fromUser safe: " + fromUser);
-
             // attack server number by attack ratio
             int[] attackServerList = selectRandomPercentage(ServersNumber, AttackRatio);
             flipAttack(attackServerList, requestOnServer, fromUser);
@@ -679,91 +525,59 @@ public class LatencyFirstModel {
 
             //TODO detect and defense
             detectAttack(requestOnServer);
-
             //stragtegy
             List<List<Integer>> strategy = getCostEffectiveStrategy();
-
             System.out.println("Time " + CurrentTime + " strategy: " + strategy);
-            // TODO 计算latency前 恢复原request list
             for (EdgeUser user : Users) {
-                // 获取用户的 dataList
                 List<Integer> userDataList = Users.get(user.id).dataList;
-
-                // 清空 userDataList，不影响 backupDataListOnUser 中的数据
                 userDataList.clear();
-
-                // 从 backupDataListOnUser 获取独立的副本进行添加
                 List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                 userDataList.addAll(backupList);
             }
-
             //TODO attack end
-
             BCU newBcu = calculateTotalBenefits(strategy);
-
             CurrentStorage.addAll(strategy);
             benefit = newBcu.benefit;
             coveredUsers = newBcu.cu;
             latency = newBcu.latency;
             Instant end = Instant.now();
             double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
-
             updateServerDataDistance();
-
-//            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
-//            TotalLatency.add(latency);
-
             double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
             double hitRatioAttacked = calculateHitRatioAttacked(strategy, attackServerList, requestOnServer, fromUser);
             TotalLatency.add(totalLatency);
             AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
 
-            // MigrationCosts.add(cost);
-            // Objs.add(benefit - cost);
-            // AverageRevenue.add(benefit - cost / coveredUsers);
+
             TotalBenefits.add(benefit);
             CoveragedUsers.add(coveredUsers);
             HitRatio.add(coveredUsers / Users.size());
             HitRatioAttacked.add(hitRatioAttacked);
 //            AttackedHitRatio.add(0.0);
             Times.add(duration);
-
             System.out.println("---- LFM Defense Convention ---- " + CurrentTime);
             // System.out.println("Revenue: " + (benefit - cost));
             System.out.println("Total Latency: " + totalLatency);
             System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
             System.out.println("Benefits: " + benefit);
-            // System.out.println("MCost: " + cost);
+
             System.out.println("Coverd:" + coveredUsers);
             System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
-            // System.out.println("Time:" + duration);
-            // System.out.println();
-
             CurrentTime++;
         }
-
-        // int totalR = 0;
-        // for (double obj : Objs) {
-        // totalR += obj;
-        // }
-        // System.out.println("Total R = " + totalR);
-        // System.out.println();
     }
 
-    //无攻击 new defense
     public void runLatencySafeDefense() {
         CurrentTime = 0;
 
         // int totalBenenfits = 0;
-
         while (CurrentTime < Time) {
             Instant start = Instant.now();
             double benefit = 0;
             double coveredUsers = 0;
             double latency = 0;
 
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -802,15 +616,11 @@ public class LatencyFirstModel {
 
             List<List<Integer>> strategy = getCostEffectiveStrategy();
 
-            //TODO 恢复datalist to calculate
+            //TODO 
             for (EdgeUser user : Users) {
-                // 获取用户的 dataList
+               
                 List<Integer> userDataList = Users.get(user.id).dataList;
-
-                // 清空 userDataList，不影响 backupDataListOnUser 中的数据
                 userDataList.clear();
-
-                // 从 backupDataListOnUser 获取独立的副本进行添加
                 List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                 userDataList.addAll(backupList);
             }
@@ -825,38 +635,27 @@ public class LatencyFirstModel {
             double duration = (double) (Duration.between(start, end).toMillis()) / 1000;
 
             updateServerDataDistance();
-
-//            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
-//            TotalLatency.add(latency);
-
             double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
 
             TotalLatency.add(totalLatency);
             AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
-            // MigrationCosts.add(cost);
-            // Objs.add(benefit - cost);
-            // AverageRevenue.add(benefit - cost / coveredUsers);
+
             TotalBenefits.add(benefit);
             CoveragedUsers.add(coveredUsers);
             HitRatio.add(coveredUsers / Users.size());
             HitRatioAttacked.add(0.0);
             Times.add(duration);
-
             System.out.println("---- LFM safe defense ---- " + CurrentTime);
             System.out.println("Total Latency: " + totalLatency);
             System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
             System.out.println("Benefits: " + benefit);
-            // System.out.println("MCost: " + cost);
             System.out.println("Coverd:" + coveredUsers);
-            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
-            // System.out.println("Time:" + duration);
-            // System.out.println();
+
             CurrentTime++;
         }
 
     }
 
-    //无攻击 传统防御
     public void runLatencySafeCon() {
         CurrentTime = 0;
 
@@ -868,7 +667,7 @@ public class LatencyFirstModel {
             double coveredUsers = 0;
             double latency = 0;
 
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -902,20 +701,14 @@ public class LatencyFirstModel {
 
             //TODO defense
             detectAttack(requestOnServer);
-
             CurrentStorage.clear();
-
             List<List<Integer>> strategy = getCostEffectiveStrategy();
 
-            //TODO 恢复datalist to calculate
+            //TODO 
             for (EdgeUser user : Users) {
-                // 获取用户的 dataList
+               
                 List<Integer> userDataList = Users.get(user.id).dataList;
-
-                // 清空 userDataList，不影响 backupDataListOnUser 中的数据
                 userDataList.clear();
-
-                // 从 backupDataListOnUser 获取独立的副本进行添加
                 List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                 userDataList.addAll(backupList);
             }
@@ -931,16 +724,11 @@ public class LatencyFirstModel {
 
             updateServerDataDistance();
 
-//            double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - benefit;
-//            TotalLatency.add(latency);
-
             double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredUsers) * DelayEdgeCloud;
 
             TotalLatency.add(totalLatency);
             AverageLatency.add(totalLatency / RequestsList.get(CurrentTime).size());
-            // MigrationCosts.add(cost);
-            // Objs.add(benefit - cost);
-            // AverageRevenue.add(benefit - cost / coveredUsers);
+
             TotalBenefits.add(benefit);
             CoveragedUsers.add(coveredUsers);
             HitRatio.add(coveredUsers / Users.size());
@@ -951,11 +739,7 @@ public class LatencyFirstModel {
             System.out.println("Total Latency: " + totalLatency);
             System.out.println("Average Latency: " + latency / RequestsList.get(CurrentTime).size());
             System.out.println("Benefits: " + benefit);
-            // System.out.println("MCost: " + cost);
             System.out.println("Coverd:" + coveredUsers);
-            // System.out.println("RPCU:" + (benefit - cost) / coveredUsers);
-            // System.out.println("Time:" + duration);
-            // System.out.println();
             CurrentTime++;
         }
 
@@ -1025,19 +809,12 @@ public class LatencyFirstModel {
         return strategy;
     }
 
-    // public class Strategy {
-    // List<List<Integer>> dataCacheList = new ArrayList<>();
-    // double totalBenefits;
-    // int cu;
-    // }
 
     private DataBenefitsOnServer getServerAndDataWithMaximumBenefitsPerCacheUnit(List<List<Integer>> dataCacheList,
                                                                                  int[] spaceLimits) {
         // List<DataPopularityOnServer> dataPopularityOnServerList = new ArrayList<>();
-
         double currentBPC = 0;
-        // double beforeBenefit = calculateTotalBenefits(dataCacheList).benefit;
-        // double currentBenefit = 0;
+ 
         int s = -1;
         int d = -1;
 
@@ -1055,19 +832,12 @@ public class LatencyFirstModel {
                 BCU b = calculateTotalBenefits(dataCacheList);
 
                 dataCacheList.get(data).remove(dataCacheList.get(data).size() - 1);
-
-                // currentBenefit = b.benefit;
-
-                // if (currentBenefit - beforeBenefit == 0)
-                // continue;
-
                 double bpc = (b.benefit - currentBenefit) / DataSizes[data];
                 if (currentBPC < bpc) {
                     currentBPC = bpc;
                     s = server.id;
                     d = data;
                 }
-
             }
         }
 
@@ -1091,7 +861,7 @@ public class LatencyFirstModel {
             List<Integer> requestData = requestOnServer.get(attackServer);
             List<Integer> userSendingReq = fromUser.get(attackServer);
             for (int j = 0; j < requestData.size(); j++) {
-                total++; //被attack server收到的请求总数
+                total++; 
                 boolean isFromCloud = true;
                 int data = requestData.get(j);
                 List<Integer> serverList = storages.get(data);
@@ -1116,8 +886,7 @@ public class LatencyFirstModel {
         // List<DataPopularityOnServer> dataPopularityOnServerList = new ArrayList<>();
 
         double currentCPC = 0;
-        // double beforeBenefit = calculateTotalBenefits(dataCacheList).benefit;
-        // double currentBenefit = 0;
+ 
         int s = -1;
         int d = -1;
 
@@ -1136,18 +905,12 @@ public class LatencyFirstModel {
 
                 dataCacheList.get(data).remove(dataCacheList.get(data).size() - 1);
 
-//                 currentBenefit = b.benefit;
-//
-//                 if (currentBenefit - beforeBenefit == 0)
-//                 continue;
-
                 double cpc = (b.cu - currentCover) / DataSizes[data];
                 if (currentCPC < cpc) {
                     currentCPC = cpc;
                     s = server.id;
                     d = data;
                 }
-
             }
         }
 
@@ -1174,8 +937,6 @@ public class LatencyFirstModel {
         int cu = 0;
         int totallatency = 0;
 
-        // System.out.println(RequestsList.get(CurrentTime).size());
-
         for (EdgeUser u : Users) {
             if (!RequestsList.get(CurrentTime).contains(u.id))
                 continue;
@@ -1199,9 +960,6 @@ public class LatencyFirstModel {
                 cu++;
                 totallatency += LatencyLimit - benefit;
             }
-
-            // System.out.println("User " + u.id + " - Benefit " + benefit *
-            // BenefitUnitCost);
         }
 
         bcu.benefit = total;
@@ -1218,7 +976,7 @@ public class LatencyFirstModel {
 //                List<Integer> requestListAttakced = tamperDistributionOnServer(requestOnServer, attackServerList[k]);
             Map<Integer, Integer> swapMap = tamperDistributionOnServerMap(DataNumber, requestOnServer, attackServerList[k]);
 //                System.out.println("requestListAttakced" + requestListAttakced);
-            //通过sever上对调过的request 篡改user的datalist
+            
 //                for (Integer coverUser : Servers.get(attackServerList[k]).directCoveredUsers) {
             for (Integer tamperuser : fromUser.get(attackServerList[k])) {
                 if (RequestsList.get(CurrentTime).contains(tamperuser)) {
@@ -1238,7 +996,7 @@ public class LatencyFirstModel {
             List<Integer> noiseDistribution = tamperRequestListWithGaussianNoise(DataNumber, requestOnServer, attackServerList[k],0.0,1.0);
             int index = 0;
 //                System.out.println("requestListAttakced" + requestListAttakced);
-            //通过sever上对调过的request 篡改user的datalist
+            
 //                for (Integer coverUser : Servers.get(attackServerList[k]).directCoveredUsers) {
             for (Integer tamperuser : fromUser.get(attackServerList[k])) {
                 if (RequestsList.get(CurrentTime).contains(tamperuser)) {

@@ -12,7 +12,7 @@ public class Server {
     private List<Integer> requestListPerServer;
     private double[] requestRatios;
     private List<Integer> requestFromUser;
-    private Map<Integer, List<Integer>> requestTimestamps; // 记录每个请求类型的时间戳
+    private Map<Integer, List<Integer>> requestTimestamps;
 
 
     public void setRequestListPerServer(List<Integer> requestListPerServer) {
@@ -95,7 +95,6 @@ public class Server {
     }
 
     public void tamperDistribution() {
-        //1 根据数量反转 改变list
         SwapByFrequency(this.requestListPerServer);
 
         changeRequestCount();
@@ -109,21 +108,17 @@ public class Server {
     }
 
     public List<Integer> SwapByFrequency(List<Integer> requestListPerServer) {
-        // 统计每个元素的出现次数
         Map<Integer, Integer> frequencyMap = getFrequency(requestListPerServer);
 
-        // 将元素按照出现次数进行排序（从多到少）
         List<Map.Entry<Integer, Integer>> sortedEntries = new ArrayList<>(frequencyMap.entrySet());
         sortedEntries.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
 
-        // 按照出现次数最多和最少的互换，依次类推
         int size = sortedEntries.size();
         for (int i = 0; i < size / 2; i++) {
-            // 获取最多和最少的元素
+
             int maxKey = sortedEntries.get(i).getKey();
             int minKey = sortedEntries.get(size - 1 - i).getKey();
 
-            // 互换元素的位置
             for (int j = 0; j < requestListPerServer.size(); j++) {
                 if (requestListPerServer.get(j) == maxKey) {
                     requestListPerServer.set(j, minKey);
@@ -137,9 +132,8 @@ public class Server {
     }
 
 
-    //request count 根据list计算
     public void changeRequestCount() {
-        // 将requestCounts数组的所有元素清零
+
         for (int i = 0; i < this.requestCounts.length; i++) {
             this.requestCounts[i] = 0;
         }

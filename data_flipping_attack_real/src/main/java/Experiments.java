@@ -63,12 +63,10 @@ public class Experiments {
     }
 
     private static String selectTargetServer(EdgeUser user, List<EdgeServer> servers) {
-        // 根据用户的nearEdgeServers选择服务器
         if (!user.nearEdgeServers.isEmpty()) {
             int serverId = user.nearEdgeServers.get(0);
             return "http://localhost:" + (5000 + serverId);
         }
-        // 默认选择第一个服务器
         return "http://localhost:5001";
     }
 
@@ -109,7 +107,6 @@ public class Experiments {
 
 
         List<Thread> threads = new ArrayList<>();
-        // 启动EdgeServer线程
         for (int i = 0; i < servers.size(); i++) {
             final EdgeServer server = servers.get(i);
             final int port = 5001 + i;
@@ -125,13 +122,11 @@ public class Experiments {
             threads.add(serverThread);
             serverThread.start();
         }
-        // 等待服务器启动
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        // 启动user线程
 
         for (int i = 0; i < users.size(); i++) {
             final EdgeUser user = users.get(i);
@@ -183,14 +178,11 @@ public class Experiments {
             }
         }
 
-        //timePerRound次实验
         for (int ii = 0; ii < timePerRound; ii++) {
 
             int totalUsersNumber = users.size();
             List<List<Integer>> requestsList = new ArrayList<>();
 
-            //随时间生成request数量
-            //requestsList[时间步] = 用户编号列表
             for (int i = 0; i < time; i++) {
 
                 int requestsNumber = usersNumber;
@@ -315,7 +307,6 @@ public class Experiments {
         int[] dataSizes = getDataSizes(dataNumber);
 
 
-        //随机生成拓扑图
         RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
         graphGenerator.createRandomGraph();
         int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -365,13 +356,13 @@ public class Experiments {
         for (int jj = 0; jj < 5; jj++) {
             System.out.println(jj + " --- ");
 
-            //timePerRound次实验
+            
             for (int ii = 0; ii < timePerRound; ii++) {
 
                 int totalUsersNumber = users.size();
                 List<List<Integer>> requestsList = new ArrayList<>();
 
-                //随时间生成request数量
+                
                 for (int i = 0; i < time; i++) {
 
                     int requestsNumber = usersNumber;
@@ -557,7 +548,7 @@ public class Experiments {
         int[] dataSizes = getDataSizes(dataNumber);
 
         for (int jj = 0; jj < 5; jj++) {
-            //随机生成拓扑图
+            
             RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
             graphGenerator.createRandomGraph();
             int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -607,13 +598,13 @@ public class Experiments {
 
             System.out.println(jj + " --- ");
 
-            //timePerRound次实验
+            
             for (int ii = 0; ii < timePerRound; ii++) {
 
                 int totalUsersNumber = users.size();
                 List<List<Integer>> requestsList = new ArrayList<>();
 
-                //随时间生成request数量
+                
                 for (int i = 0; i < time; i++) {
 
                     int requestsNumber = usersNumber;
@@ -800,7 +791,7 @@ public class Experiments {
 
         for (int jj = 0; jj < 5; jj++) {
             int[] dataSizes = getDataSizes(dataNumber);
-            //随机生成拓扑图
+            
             RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
             graphGenerator.createRandomGraph();
             int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -850,13 +841,13 @@ public class Experiments {
 
             System.out.println(jj + " --- ");
 
-            //timePerRound次实验
+            
             for (int ii = 0; ii < timePerRound; ii++) {
 
                 int totalUsersNumber = users.size();
                 List<List<Integer>> requestsList = new ArrayList<>();
 
-                //随时间生成request数量
+                
                 for (int i = 0; i < time; i++) {
 
                     int requestsNumber = usersNumber;
@@ -1043,7 +1034,7 @@ public class Experiments {
 
         for (int jj = 0; jj < 5; jj++) {
             System.out.println(jj + " --- ");
-            //随机生成拓扑图
+            
             RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
             graphGenerator.createRandomGraph();
             int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -1091,13 +1082,13 @@ public class Experiments {
             }
 
 
-            //timePerRound次实验
+            
             for (int ii = 0; ii < timePerRound; ii++) {
 
                 int totalUsersNumber = users.size();
                 List<List<Integer>> requestsList = new ArrayList<>();
 
-                //随时间生成request数量
+                
                 for (int i = 0; i < time; i++) {
 
                     int requestsNumber = usersNumber;
@@ -1285,7 +1276,7 @@ public class Experiments {
         for (int jj = 0; jj < 5; jj++) {
 
             int[] spaceLimits = getSpaceLimits(100, maxSpace);
-            //随机生成拓扑图
+            
             RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
             graphGenerator.createRandomGraph();
             int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -1335,13 +1326,13 @@ public class Experiments {
 
             System.out.println(jj + " --- ");
 
-            //timePerRound次实验
+            
             for (int ii = 0; ii < timePerRound; ii++) {
 
                 int totalUsersNumber = users.size();
                 List<List<Integer>> requestsList = new ArrayList<>();
 
-                //随时间生成request数量
+                
                 for (int i = 0; i < time; i++) {
 
                     int requestsNumber = usersNumber;
@@ -1529,7 +1520,7 @@ public class Experiments {
 
         for (int jj = 0; jj < 3; jj++) {
             System.out.println(jj + " --- ");
-            //随机生成拓扑图
+            
             RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
             graphGenerator.createRandomGraph();
             int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -1576,13 +1567,13 @@ public class Experiments {
                 }
             }
 
-            //timePerRound次实验
+            
             for (int ii = 0; ii < timePerRound; ii++) {
 
                 int totalUsersNumber = users.size();
                 List<List<Integer>> requestsList = new ArrayList<>();
 
-                //随时间生成request数量
+                
                 for (int i = 0; i < time; i++) {
 
                     int requestsNumber = usersNumber;
@@ -1767,7 +1758,7 @@ public class Experiments {
 
         for (int jj = 0; jj < 5; jj++) {
             System.out.println(jj + " --- ");
-            //随机生成拓扑图
+            
             RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
             graphGenerator.createRandomGraph();
             int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -1815,13 +1806,13 @@ public class Experiments {
             }
 
 
-            //timePerRound次实验
+            
             for (int ii = 0; ii < timePerRound; ii++) {
 
                 int totalUsersNumber = users.size();
                 List<List<Integer>> requestsList = new ArrayList<>();
 
-                //随时间生成request数量
+                
                 for (int i = 0; i < time; i++) {
 
                     int requestsNumber = usersNumber;
@@ -2034,7 +2025,7 @@ public class Experiments {
 
         for (int jj = 0; jj < 1; jj++) {
             System.out.println(jj + " --- ");
-        //随机生成拓扑图
+        
         RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
         graphGenerator.createRandomGraph();
         int[][] distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -2079,13 +2070,13 @@ public class Experiments {
             }
         }
 
-        //timePerRound次实验
+        
         for (int ii = 0; ii < timePerRound; ii++) {
 
             int totalUsersNumber = users.size();
             List<List<Integer>> requestsList = new ArrayList<>();
 
-            //随时间生成request数量
+            
             for (int i = 0; i < time; i++) {
 
                 int requestsNumber = usersNumber;

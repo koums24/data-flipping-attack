@@ -18,27 +18,17 @@ public class ServerAttackDetection {
         int numberOfUsers = 6;
         int totalRequests = 100;
         int numContent = 200;
-        int time = 500;//实验次数
-//        for (int batch = 40; batch < 80; batch += 4) {
-//            for (int slice = batch; slice < batch + 4; slice++) {
-        List<EdgeServer> servers = new ArrayList<>();
-        Random random = new Random();
-
-        // Step 1: 生成服务器
-        for (int i = 0; i < numberOfServers; i++) {
-            EdgeServer server = new EdgeServer();
-            server.id =1;
-            // Step 2: 为每个服务器分配coverUsers
+        int time = 500;
             for (int j = 0; j < numberOfUsers; j++) {
                 server.addUser("User" + (i * numberOfUsers + j));
             }
 
-            // Step 3: 为每个coverUser生成请求列表, Zipf distribution
+
             server.generateRequests(totalRequests, numContent);
             servers.add(server);
         }
 
-        // Step 4: 合并请求列表(并生成随机发送序列)
+
         List<Request> allRequests = new ArrayList<>();
         for (EdgeServer server : servers) {
 
@@ -50,7 +40,7 @@ public class ServerAttackDetection {
 //            int[] counts = new int[200];
 //            for (int element : server.getRequestList()) {
 //                if (element >= 0 && element < 200) {
-//                    counts[element]++; // 对应位置的计数器加1
+//                    counts[element]++;
 //                }
 //            }
 //            System.out.println("counts" + Arrays.toString(counts));
@@ -74,7 +64,7 @@ public class ServerAttackDetection {
 //            counts = new int[200];
 //            for (int element : server.getRequestList()) {
 //                if (element >= 0 && element < 200) {
-//                    counts[element]++; // 对应位置的计数器加1
+//                    counts[element]++;
 //                }
 //            }
 //            System.out.println("counts" + Arrays.toString(counts));
@@ -103,8 +93,7 @@ public class ServerAttackDetection {
         double[] varianceoRI = new double[numContent];//repeat interest
         double[] stdDevsRequestInterval = new double[numContent];
 
-        //初始化popularity
-        double[] contentPopularity = new double[numContent]; // 创建 double 数组
+        double[] contentPopularity = new double[numContent];
         // Initialize all elements to 0.0
         for (int i = 0; i < contentPopularity.length; i++) {
             contentPopularity[i] = 0.0;
@@ -127,13 +116,13 @@ public class ServerAttackDetection {
                     0.0;
             contentPopularity[i] = (double) contentPopularity[i] * (1 - Math.exp(-0.2)) + increaseConstant[i];
             if (contentPopularity[i] == 0) {
-                averageRequestIntensity[i] = 0; // 或者其他合适的默认值
+                averageRequestIntensity[i] = 0;
             } else {
                 averageRequestIntensity[i] = requestRatios[i] / contentPopularity[i];
             }
         }
 
-        // Step 5: 针对每个content计算metrics
+
         varianceoRI = calculateVarianceForEachContent(numContent, servers);
 
         List<Integer> allContentList = new ArrayList<>();
@@ -146,7 +135,7 @@ public class ServerAttackDetection {
         // generate dataset txt
         String filePath = "timeslice" + slice + ".txt";
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) { // true 参数启用附加模式
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
             for (int i = 0; i < numContent; i++) {
                 writer.write(String.valueOf(requestRatios[i]));
                 writer.newLine();
@@ -167,8 +156,7 @@ public class ServerAttackDetection {
         int count = 0;
         for (int t = 0; t < time; t++) {
 
-            //初始化popularity
-            double[] contentPopularity = new double[numContent]; // 创建 double 数组
+            double[] contentPopularity = new double[numContent];
             // Initialize all elements to 0.5
             for (int i = 0; i < contentPopularity.length; i++) {
                 contentPopularity[i] = 0.5;
@@ -196,7 +184,7 @@ public class ServerAttackDetection {
                         0.0;
                 contentPopularity[i] = (double) contentPopularity[i] * (1 - Math.exp(-0.2)) + increaseConstant[i];
                 if (contentPopularity[i] == 0) {
-                    averageRequestIntensity[i] = 0; // 或者其他合适的默认值
+                    averageRequestIntensity[i] = 0;
                 } else {
                     averageRequestIntensity[i] = requestRatios[i] / contentPopularity[i];
                 }
@@ -240,19 +228,17 @@ public class ServerAttackDetection {
         for (int i = 0; i < contentPopularity.length; i++) {
             contentPopularity[i] = 0.5;
         }
-        // 创建存储请求比率 方差 时间间隔标准差的数组
+
         double[] requestRatios = new double[numContent]; //total each content
         double[] varianceoRI = new double[numContent];//repeat interest
         double[] stdDevsRequestInterval = new double[numContent];
-        // Step 5: 针对每个content计算metrics
+
         requestRatios = calculateRequestRatios(numContent, allRequests);
 //        System.out.println("requestRatios: " + Arrays.toString(requestRatios));
-
 
         varianceoRI = calculateVarianceForEachContent(numContent, servers);
 //        System.out.println("varianceoRI: " + Arrays.toString(varianceoRI));
 
-        //新生成一个request list 用gm模型检测
         List<Integer> allContentList = new ArrayList<>();
         for (Request r : allRequests) {
             allContentList.add(r.getContent());
@@ -264,7 +250,6 @@ public class ServerAttackDetection {
 
         int count = 0;
         for (int t = 0; t < time; t++) {
-            //检测出的攻击数
             boolean isAttacked = detection(numberOfServers, numberOfUsers, totalRequests, numContent, requestRatios, varianceoRI, stdDevsRequestInterval, contentPopularity);
             if (isAttacked) {
                 count++;
@@ -277,11 +262,9 @@ public class ServerAttackDetection {
     private static double[] calculateRequestRatios(int numContent, List<Request> allRequests) {
 
         double[] requestRatios = new double[numContent];
-        // 统计每个content的数量
         Map<Integer, Long> contentCountMap = allRequests.stream()
                 .collect(Collectors.groupingBy(request -> request.content, Collectors.counting()));
 
-        // 计算每个content的request ratio
         int totalRequests = allRequests.size();
         Map<Integer, Double> contentRatioMap = new HashMap<>();
 
@@ -292,7 +275,6 @@ public class ServerAttackDetection {
             contentRatioMap.put(content, ratio);
         }
 
-        // 输出结果
 //        System.out.println("Content -> Request Ratio:");
         for (Map.Entry<Integer, Double> entry : contentRatioMap.entrySet()) {
             requestRatios[entry.getKey()] += entry.getValue();
@@ -303,17 +285,14 @@ public class ServerAttackDetection {
 
     private static double[] calculateVarianceForEachContent(int numContent, List<EdgeServer> servers) {
         double[] varianceoRI = new double[numContent];
-        // 获取所有的content
         Set<Integer> allContents = servers.stream()
                 .flatMap(server -> server.mergedRequests.stream())
                 .map(request -> request.content)
                 .collect(Collectors.toSet());
 
-        // 针对每个content计算方差
         for (int content : allContents) {
             List<Long> counts = new ArrayList<>();
 
-            // 统计每个server中该content的数量
             for (EdgeServer server : servers) {
                 long count = server.mergedRequests.stream()
                         .filter(request -> request.content == content)
@@ -321,7 +300,6 @@ public class ServerAttackDetection {
                 counts.add(count);
             }
 
-            // 计算方差
             varianceoRI[content] = calculateVariance(counts);
         }
         return varianceoRI;
@@ -339,7 +317,6 @@ public class ServerAttackDetection {
         double[] stdDevsRequestInterval = new double[numContent];
         Map<Integer, List<Integer>> indexMap = new HashMap<>();
 
-        // 记录每个元素的出现位置
         for (int i = 0; i < allContentList.size(); i++) {
             int num = allContentList.get(i);
             if (!indexMap.containsKey(num)) {
@@ -348,7 +325,6 @@ public class ServerAttackDetection {
             indexMap.get(num).add(i);
         }
 
-        // 计算每个元素的间隔
         Map<Integer, List<Integer>> intervalMap = new HashMap<>();
         for (Map.Entry<Integer, List<Integer>> entry : indexMap.entrySet()) {
             List<Integer> indices = entry.getValue();
@@ -359,7 +335,6 @@ public class ServerAttackDetection {
             intervalMap.put(entry.getKey(), intervals);
         }
 
-        // 计算标准差
         Map<Integer, Double> standardDeviationMap = new HashMap<>();
         for (Map.Entry<Integer, List<Integer>> entry : intervalMap.entrySet()) {
             List<Integer> intervals = entry.getValue();
@@ -369,7 +344,6 @@ public class ServerAttackDetection {
             standardDeviationMap.put(entry.getKey(), standardDeviation);
         }
 
-        // 输出结果
         for (Map.Entry<Integer, Double> entry : standardDeviationMap.entrySet()) {
             stdDevsRequestInterval[entry.getKey()] += entry.getValue();
         }
@@ -383,19 +357,16 @@ public class ServerAttackDetection {
         List<EdgeServer> servers = new ArrayList<>();
         Random random = new Random();
 
-        // Step 1: 生成服务器
         for (int i = 0; i < numberOfServers; i++) {
             EdgeServer server = new EdgeServer();
             server.id = i;
-            // Step 2: 为每个服务器分配coverUsers
             for (int j = 0; j < numberOfUsers; j++) {
                 server.addUser("User" + (i * numberOfUsers + j));
             }
-            // Step 3: 为每个coverUser生成请求列表
             server.generatePerdictRequests(totalRequests, numContent);
             servers.add(server);
         }
-        // Step 4: 合并请求列表并生成随机发送序列
+
         List<Request> allRequests = new ArrayList<>();
         for (EdgeServer server : servers) {
             server.mergeRequests();
@@ -408,7 +379,7 @@ public class ServerAttackDetection {
             int[] counts = new int[numContent];
             for (int element : server.getRequestList()) {
                 if (element >= 0 && element < numContent) {
-                    counts[element]++; // 对应位置的计数器加1
+                    counts[element]++;
                 }
             }
             System.out.println("counts" + Arrays.toString(counts));
@@ -428,7 +399,7 @@ public class ServerAttackDetection {
 //            counts = new int[numContent];
 //            for (int element : server.getRequestList()) {
 //                if (element >= 0 && element < 200) {
-//                    counts[element]++; // 对应位置的计数器加1
+//                    counts[element]++;
 //                }
 //            }
 //            System.out.println("counts" + Arrays.toString(counts));
@@ -452,9 +423,9 @@ public class ServerAttackDetection {
         System.out.println("allContentList: " + allContentList);
         System.out.println("allContentList size: " + allContentList.size());
 
-        //计算interval
+
         Map<Integer, List<Integer>> indexMap = new HashMap<>();
-        // 记录每个元素的出现位置
+
         for (int i = 0; i < allContentList.size(); i++) {
             int num = allContentList.get(i);
             if (!indexMap.containsKey(num)) {
@@ -463,7 +434,6 @@ public class ServerAttackDetection {
             indexMap.get(num).add(i);
         }
 
-        // 计算每个元素的间隔
         Map<Integer, List<Integer>> intervalMap = new HashMap<>();
         for (Map.Entry<Integer, List<Integer>> entry : indexMap.entrySet()) {
             List<Integer> indices = entry.getValue();
@@ -475,15 +445,12 @@ public class ServerAttackDetection {
         }
 
 
-        //更新和预测每个content的popularity
-        int N = 0; //malicious总数
+        int N = 0;
         for (int i = 0; i < numContent; i++) {
-            //calculate 时间间隔
             List<Integer> list = intervalMap.get(i);
             if (list != null && !intervalMap.isEmpty()) {
                 for (int j = 0; j < intervalMap.get(i).size() - 1; j++) {
                     double diff = intervalMap.get(i).get(j) / 10;
-                    //GM(1,4)模型预测该content的popularity
                     double[] predict = gm14(contentPopularity, requestRatios, varianceoRI, stdDevsRequestInterval);
 //                    System.out.println(Arrays.toString(predict));
                     double CurrPopu = contentPopularity[i] * Math.pow(0.5, diff) + 0.5;

@@ -2,7 +2,7 @@ package com.cpa.objectives;
 
 public class Request {
     String user;
-    public int content;  // 请求内容，范围在1-200之间
+    public int content;
     public long timestamp;
 
     public Request(String user, int content, long timestamp) {

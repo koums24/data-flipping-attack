@@ -29,7 +29,7 @@ public class ZipfDistribution {
         for (int i = 0; i < size; i++) {
             cumulativeProbability += probabilities[i];
             if (randomValue <= cumulativeProbability) {
-                return i;  // 返回content从0开始
+                return i;
             }
         }
         return size;

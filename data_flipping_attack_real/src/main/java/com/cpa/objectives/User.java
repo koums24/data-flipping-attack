@@ -65,11 +65,11 @@ public class User {
         return requestCountPerUser;
     }
 
-    //生成攻击请求
+
     public List<Integer> generateAttackRequest(Integer num) {
         List<Integer> attackRequestList = new ArrayList<>();
         for (int i = 0; i < num; i++) {
-            //todo FLA发送的请求
+
             attackRequestList.add(99);
         }
         return attackRequestList;
@@ -80,16 +80,16 @@ public class User {
         List<Integer> requests = new ArrayList<>();
         List<Integer> contentList = IntStream.range(0, size)
                 .mapToObj(i -> {
-                    // 生成正态分布的浮点数
+
                     double value = mean + stdDev * random.nextGaussian();
-                    // 将值截断到指定范围
+
                     int intValue = (int) Math.round(value);
                     intValue = Math.max(lowerBound, Math.min(intValue, upperBound - 1));
                     return intValue;
                 })
                 .collect(Collectors.toList());
         for (int i = 0; i < contentList.size(); i++) {
-            int content = contentList.get(i);  // 生成0到contentRange-1之间的Zipf分布内容
+            int content = contentList.get(i);
             requests.add(content);
         }
         return requests;
@@ -97,12 +97,11 @@ public class User {
 
     public static List<Integer> generateSinusoidalSequence(int size, int min, int max) {
         List<Integer> sequence = new ArrayList<>();
-        double amplitude = (max - min) / 2.0; // 振幅
-        double offset = (max + min) / 2.0; // 中心值
-        double frequency = (2 * Math.PI) / size; // 频率
+        double amplitude = (max - min) / 2.0;
+        double offset = (max + min) / 2.0;
+        double frequency = (2 * Math.PI) / size;
 
         for (int i = 0; i < size; i++) {
-            // 生成正弦波值
             double value = amplitude * Math.sin(frequency * i) + offset;
             sequence.add((int) Math.round(value));
         }

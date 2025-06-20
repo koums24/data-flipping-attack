@@ -173,16 +173,7 @@ public class OptimalModel {
             updateServerDataDistance();
         }
 
-        // Texts.add("EDCTime V = " + V);
-        // Texts.add(addTexts("Objs: ", Objs));
-        // Texts.add(addTexts("Ps " + getAveragePs() + " : ", Ps));
-        // Texts.add(addTexts("Caches " + getAverageCaches() + " : ", Caches));
-        // Texts.add(addTexts("Latencies " + getAverageLatencies() + " : ", Latencies));
-        // Texts.add(addTexts("SRNs " + getAverageServedRequestsNumbers() + " : ",
-        // ServedRequestsNumbers));
 
-        // System.out.println("Total Cost = " + getCost());
-        // System.out.println("Benefit/Cost = " + getBenefitPerReplica());
     }
 
     public void runOptimalAttack() {
@@ -269,8 +260,6 @@ public class OptimalModel {
 
     private void runO() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
 
@@ -386,21 +375,6 @@ public class OptimalModel {
                 System.out.println("Benefits: " + cp.getValue(totalBenefits));
 //                 System.out.println("MCost: " + cp.getValue(migration));
                 System.out.println("CoveredUser:" + coveredRequestNum);
-//                 System.out.println("RPCU:" + cp.getValue(obj) /
-//                 cp.getValue(coveredRequestNum));
-//                 System.out.println("Time:" + duration);
-//                 System.out.println();
-
-                // System.out.println("Obj = " + cp.getValue(obj) + " - migration = " +
-                // cp.getValue(migration)
-                // + " - cMigrationTimes = " + cp.getValue(cMigrationTimes) + " -
-                // sMigrationTimes = "
-                // + cp.getValue(sMigrationTimes) + " - Benefits = " +
-                // cp.getValue(cp.sum(benifitsExprs))
-                // + " - Servers Number = " + ServersNumber + " - coveredRequestNum = "
-                // + cp.getValue(coveredRequestNum) + " ---- " + served + " total benefits = "
-                // + cp.getValue(totalBenefits) + " - average benefits = "
-                // + cp.getValue(totalBenefits) / cp.getValue(coveredRequestNum));
 
                 CurrentTime++;
 
@@ -417,8 +391,6 @@ public class OptimalModel {
 
     private void runOAttack() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
 
@@ -436,7 +408,7 @@ public class OptimalModel {
             IloIntExpr[][][] userBenefitsExprs = new IloIntExpr[Users.size()][DataNumber][ServersNumber];
 
             //TODO flip attack
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -544,15 +516,15 @@ public class OptimalModel {
 //                CurrentStorage = fillUpStorage(CurrentStorage);
 
 
-                //TODO 恢复userlist 计算metrics
+                //TODO 
                 for (EdgeUser user : Users) {
-                    // 获取用户的 dataList
+                   
                     List<Integer> userDataList = Users.get(user.id).dataList;
 
-                    // 清空 userDataList，不影响 backupDataListOnUser 中的数据
+                    
                     userDataList.clear();
 
-                    // 从 backupDataListOnUser 获取独立的副本进行添加
+                 
                     List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                     userDataList.addAll(backupList);
                 }
@@ -591,21 +563,6 @@ public class OptimalModel {
 //                 System.out.println("MCost: " + cp.getValue(migration));
                 System.out.println("CoveredUser:" + coveredRequestNum);
                 System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-//                 System.out.println("RPCU:" + cp.getValue(obj) /
-//                 cp.getValue(coveredRequestNum));
-//                 System.out.println("Time:" + duration);
-//                 System.out.println();
-
-                // System.out.println("Obj = " + cp.getValue(obj) + " - migration = " +
-                // cp.getValue(migration)
-                // + " - cMigrationTimes = " + cp.getValue(cMigrationTimes) + " -
-                // sMigrationTimes = "
-                // + cp.getValue(sMigrationTimes) + " - Benefits = " +
-                // cp.getValue(cp.sum(benifitsExprs))
-                // + " - Servers Number = " + ServersNumber + " - coveredRequestNum = "
-                // + cp.getValue(coveredRequestNum) + " ---- " + served + " total benefits = "
-                // + cp.getValue(totalBenefits) + " - average benefits = "
-                // + cp.getValue(totalBenefits) / cp.getValue(coveredRequestNum));
 
                 CurrentTime++;
 
@@ -622,8 +579,6 @@ public class OptimalModel {
 
     private void runORandomAttack() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
 
@@ -641,7 +596,7 @@ public class OptimalModel {
             IloIntExpr[][][] userBenefitsExprs = new IloIntExpr[Users.size()][DataNumber][ServersNumber];
 
             //TODO flip attack
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -748,15 +703,15 @@ public class OptimalModel {
 //                CurrentStorage = fillUpStorage(CurrentStorage);
 
 
-                //TODO 恢复userlist 计算metrics
+                //TODO 
                 for (EdgeUser user : Users) {
-                    // 获取用户的 dataList
+                   
                     List<Integer> userDataList = Users.get(user.id).dataList;
 
-                    // 清空 userDataList，不影响 backupDataListOnUser 中的数据
+                    
                     userDataList.clear();
 
-                    // 从 backupDataListOnUser 获取独立的副本进行添加
+                 
                     List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                     userDataList.addAll(backupList);
                 }
@@ -795,21 +750,6 @@ public class OptimalModel {
 //                 System.out.println("MCost: " + cp.getValue(migration));
                 System.out.println("CoveredUser:" + coveredRequestNum);
                 System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-//                 System.out.println("RPCU:" + cp.getValue(obj) /
-//                 cp.getValue(coveredRequestNum));
-//                 System.out.println("Time:" + duration);
-//                 System.out.println();
-
-                // System.out.println("Obj = " + cp.getValue(obj) + " - migration = " +
-                // cp.getValue(migration)
-                // + " - cMigrationTimes = " + cp.getValue(cMigrationTimes) + " -
-                // sMigrationTimes = "
-                // + cp.getValue(sMigrationTimes) + " - Benefits = " +
-                // cp.getValue(cp.sum(benifitsExprs))
-                // + " - Servers Number = " + ServersNumber + " - coveredRequestNum = "
-                // + cp.getValue(coveredRequestNum) + " ---- " + served + " total benefits = "
-                // + cp.getValue(totalBenefits) + " - average benefits = "
-                // + cp.getValue(totalBenefits) / cp.getValue(coveredRequestNum));
 
                 CurrentTime++;
 
@@ -826,8 +766,6 @@ public class OptimalModel {
 
     private void run0DefenseCon() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
 
@@ -845,7 +783,7 @@ public class OptimalModel {
             IloIntExpr[][][] userBenefitsExprs = new IloIntExpr[Users.size()][DataNumber][ServersNumber];
 
             //TODO attack
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -957,15 +895,15 @@ public class OptimalModel {
 //                CurrentStorage = fillUpStorage(CurrentStorage);
 
 
-                //TODO 恢复userlist 计算metrics
+                //TODO 
                 for (EdgeUser user : Users) {
-                    // 获取用户的 dataList
+                   
                     List<Integer> userDataList = Users.get(user.id).dataList;
 
-                    // 清空 userDataList，不影响 backupDataListOnUser 中的数据
+                    
                     userDataList.clear();
 
-                    // 从 backupDataListOnUser 获取独立的副本进行添加
+                 
                     List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                     userDataList.addAll(backupList);
                 }
@@ -1004,10 +942,6 @@ public class OptimalModel {
 //                 System.out.println("MCost: " + cp.getValue(migration));
                 System.out.println("CoveredUser:" + coveredRequestNum);
                 System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-//                 System.out.println("RPCU:" + cp.getValue(obj) /
-//                 cp.getValue(coveredRequestNum));
-//                 System.out.println("Time:" + duration);
-//                 System.out.println();
 
                 CurrentTime++;
 
@@ -1024,8 +958,6 @@ public class OptimalModel {
 
     private void runOAttackDefense() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
 
@@ -1043,7 +975,7 @@ public class OptimalModel {
             IloIntExpr[][][] userBenefitsExprs = new IloIntExpr[Users.size()][DataNumber][ServersNumber];
 
             //TODO flip attack
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -1176,15 +1108,15 @@ public class OptimalModel {
 //                CurrentStorage = fillUpStorage(CurrentStorage);
 
 
-                //TODO 恢复userlist 计算metrics
+                //TODO 
                 for (EdgeUser user : Users) {
-                    // 获取用户的 dataList
+                   
                     List<Integer> userDataList = Users.get(user.id).dataList;
 
-                    // 清空 userDataList，不影响 backupDataListOnUser 中的数据
+                    
                     userDataList.clear();
 
-                    // 从 backupDataListOnUser 获取独立的副本进行添加
+                 
                     List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                     userDataList.addAll(backupList);
                 }
@@ -1223,21 +1155,6 @@ public class OptimalModel {
 //                 System.out.println("MCost: " + cp.getValue(migration));
                 System.out.println("CoveredUser:" + coveredRequestNum);
                 System.out.println("HitRatio Attacked:" + hitRatioAttacked);
-//                 System.out.println("RPCU:" + cp.getValue(obj) /
-//                 cp.getValue(coveredRequestNum));
-//                 System.out.println("Time:" + duration);
-//                 System.out.println();
-
-                // System.out.println("Obj = " + cp.getValue(obj) + " - migration = " +
-                // cp.getValue(migration)
-                // + " - cMigrationTimes = " + cp.getValue(cMigrationTimes) + " -
-                // sMigrationTimes = "
-                // + cp.getValue(sMigrationTimes) + " - Benefits = " +
-                // cp.getValue(cp.sum(benifitsExprs))
-                // + " - Servers Number = " + ServersNumber + " - coveredRequestNum = "
-                // + cp.getValue(coveredRequestNum) + " ---- " + served + " total benefits = "
-                // + cp.getValue(totalBenefits) + " - average benefits = "
-                // + cp.getValue(totalBenefits) / cp.getValue(coveredRequestNum));
 
                 CurrentTime++;
 
@@ -1254,11 +1171,9 @@ public class OptimalModel {
 
     private void runOSafeDefense() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -1369,15 +1284,11 @@ public class OptimalModel {
                 }
 
 //                CurrentStorage = fillUpStorage(CurrentStorage);
-                //TODO 恢复datalist to calculate
+                //TODO 
                 for (EdgeUser user : Users) {
-                    // 获取用户的 dataList
+                   
                     List<Integer> userDataList = Users.get(user.id).dataList;
-
-                    // 清空 userDataList，不影响 backupDataListOnUser 中的数据
                     userDataList.clear();
-
-                    // 从 backupDataListOnUser 获取独立的副本进行添加
                     List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                     userDataList.addAll(backupList);
                 }
@@ -1396,7 +1307,6 @@ public class OptimalModel {
                     }
                 }
 
-//                double latency = RequestsList.get(CurrentTime).size() * LatencyLimit - cp.getValue(totalBenefits);
                 double totalLatency = latency * DelayEdgeEdge + (Users.size() - coveredRequestNum) * DelayEdgeCloud;
                 TotalLatency.add(totalLatency);
 
@@ -1416,10 +1326,6 @@ public class OptimalModel {
                 System.out.println("Benefits: " + cp.getValue(totalBenefits));
 //                 System.out.println("MCost: " + cp.getValue(migration));
                 System.out.println("CoveredUser:" + coveredRequestNum);
-//                 System.out.println("RPCU:" + cp.getValue(obj) /
-//                 cp.getValue(coveredRequestNum));
-//                 System.out.println("Time:" + duration);
-//                 System.out.println();
 
                 CurrentTime++;
 
@@ -1435,11 +1341,9 @@ public class OptimalModel {
 
     private void runOSafeCon() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
-            //备份user的datalist
+            //
             List<List<Integer>> backupDataListOnUser = new ArrayList<>();
             for (int i = 0; i < Users.size(); i++) {
                 backupDataListOnUser.add(new ArrayList<>());
@@ -1551,15 +1455,15 @@ public class OptimalModel {
                 }
 
 //                CurrentStorage = fillUpStorage(CurrentStorage);
-                //TODO 恢复datalist to calculate
+                //TODO 
                 for (EdgeUser user : Users) {
-                    // 获取用户的 dataList
+                   
                     List<Integer> userDataList = Users.get(user.id).dataList;
 
-                    // 清空 userDataList，不影响 backupDataListOnUser 中的数据
+                    
                     userDataList.clear();
 
-                    // 从 backupDataListOnUser 获取独立的副本进行添加
+                 
                     List<Integer> backupList = backupDataListOnUser.get(Users.get(user.id).id);
                     userDataList.addAll(backupList);
                 }
@@ -1597,10 +1501,6 @@ public class OptimalModel {
                 System.out.println("Benefits: " + cp.getValue(totalBenefits));
 //                 System.out.println("MCost: " + cp.getValue(migration));
                 System.out.println("CoveredUser:" + coveredRequestNum);
-//                 System.out.println("RPCU:" + cp.getValue(obj) /
-//                 cp.getValue(coveredRequestNum));
-//                 System.out.println("Time:" + duration);
-//                 System.out.println();
 
                 CurrentTime++;
             } else {
@@ -1616,8 +1516,6 @@ public class OptimalModel {
 
     private void runcedc() {
         Instant start = Instant.now();
-        // System.out.println("Index: " + mIndex + " dataNumber: " + dataNumber + "
-        // mDataNumber: " + mDataNumber + " mServersNumber: " + mServersNumber);
 
         try {
 
@@ -1850,7 +1748,7 @@ public class OptimalModel {
 //                List<Integer> requestListAttakced = tamperDistributionOnServer(requestOnServer, attackServerList[k]);
             Map<Integer, Integer> swapMap = tamperDistributionOnServerMap(DataNumber, requestOnServer, attackServerList[k]);
 //                System.out.println("requestListAttakced" + requestListAttakced);
-            //通过sever上对调过的request 篡改user的datalist
+            
 //                for (Integer coverUser : Servers.get(attackServerList[k]).directCoveredUsers) {
             for (Integer tamperuser : fromUser.get(attackServerList[k])) {
                 if (RequestsList.get(CurrentTime).contains(tamperuser)) {
@@ -1870,7 +1768,7 @@ public class OptimalModel {
             List<Integer> noiseDistribution = tamperRequestListWithGaussianNoise(DataNumber, requestOnServer, attackServerList[k],0.0,1.0);
             int index = 0;
 //                System.out.println("requestListAttakced" + requestListAttakced);
-            //通过sever上对调过的request 篡改user的datalist
+            
 //                for (Integer coverUser : Servers.get(attackServerList[k]).directCoveredUsers) {
             for (Integer tamperuser : fromUser.get(attackServerList[k])) {
                 if (RequestsList.get(CurrentTime).contains(tamperuser)) {
@@ -1895,7 +1793,7 @@ public class OptimalModel {
             List<Integer> requestData = requestOnServer.get(attackServer);
             List<Integer> userSendingReq = fromUser.get(attackServer);
             for (int j = 0; j < requestData.size(); j++) {
-                total++; //被attack server收到的请求总数
+                total++; 
                 int data = requestData.get(j);
                 int user = userSendingReq.get(j);
                 List<Integer> serverList = storages.get(data);

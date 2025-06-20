@@ -16,11 +16,11 @@ public class FLAGP {
         int numUsers = 20;
         int numServers = 4;
         int requestPeruser = 100;
-        double s = 1.0; // Zipf分布参数
-        int numRequestTypes = 200; // 请求类型数量
+        double s = 1.0;
+        int numRequestTypes = 200;
 
         int time = 1000;
-        // 创建用户和服务器
+
         List<User> users = new ArrayList<>();
         List<Server> servers = new ArrayList<>();
         for (int i = 0; i < numUsers; i++) {
@@ -281,19 +281,19 @@ public class FLAGP {
 
 
     public static List<Integer> tamperDistribution(int dataNumber, List<Integer> requestList) {
-        // 1. 统计每个元素的出现次数，包括未出现的数据（视为0次）
+       
         Map<Integer, Integer> frequencyMap = getFrequencyMap(dataNumber, requestList);
 
-        // 2. 根据出现次数对元素排序
+        
         List<Integer> sortedByFrequency = new ArrayList<>(frequencyMap.keySet());
         sortedByFrequency.sort(Comparator.comparingInt(frequencyMap::get));
 
-        // 3. 准备交换：出现次数多的列表和出现次数少的列表
+        
         int size = sortedByFrequency.size();
         List<Integer> mostFrequent = sortedByFrequency.subList(size / 2, size); // 出现次数多的
         List<Integer> leastFrequent = sortedByFrequency.subList(0, size / 2);   // 出现次数少的
 
-        // 4. 交换元素
+       
         Map<Integer, Integer> swapMap = new HashMap<>();
         for (int i = 0; i < leastFrequent.size(); i++) {
             int mostFreq = mostFrequent.get(mostFrequent.size() - 1 - i);
@@ -302,7 +302,7 @@ public class FLAGP {
             swapMap.put(mostFreq, leastFreq);
         }
 
-        // 5. 构建修改后的requestOnServer列表
+        
         List<Integer> modifiedRequestList = new ArrayList<>();
         for (int num : requestList) {
             modifiedRequestList.add(swapMap.getOrDefault(num, num));

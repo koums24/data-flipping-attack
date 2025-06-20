@@ -29,7 +29,6 @@ public class EdgeUser {
     public List<Integer> nearEdgeServers = new ArrayList<>();
     public List<Integer> dataList = new ArrayList<>();
 
-    // HTTP客户端相关
     private final HttpClient httpClient;
     private final ExecutorService executor;
     private final Gson gson;
@@ -49,38 +48,31 @@ public class EdgeUser {
         this.gson = new Gson();
     }
 
-    // 设置目标EdgeServer URL
     public void setTargetEdgeServer(String serverUrl) {
         this.targetEdgeServerUrl = serverUrl;
     }
 
-    // 多线程发送HTTP请求到同一个EdgeServer
     public void sendRequestsToEdgeServer(int totalRequests) {
-        System.out.println("EdgeUser " + id + " 开始向 " + targetEdgeServerUrl + " 发送HTTP请求...");
-
-        // 生成请求数据
+        System.out.println("EdgeUser " + id + " send to " + targetEdgeServerUrl );
 //        generateRequests(totalRequests, 30, "zipf");
 
-        // 为每个请求创建线程发送到同一个EdgeServer
         for (int i = 0; i < dataList.size(); i++) {
             final int contentId = dataList.get(i);
             final int requestIndex = i;
 
             executor.submit(() -> {
                 try {
-                    // 在实际发送请求前添加延迟
                     Thread.sleep(requestIndex * (3000 + new Random().nextInt(100)));
 
                     EdgeRequest edgeRequest = new EdgeRequest(this.id, this.nearEdgeServers.get(0), contentId);
                     sendHttpRequest(edgeRequest, requestIndex);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    System.out.println("EdgeUser " + id + " 请求 " + requestIndex + " 被中断");
+                    System.out.println("EdgeUser " + id + " request " + requestIndex + " shut down");
                 }
             });
         }
     }
-    // 发送HTTP请求到EdgeServer
     private void sendHttpRequest(EdgeRequest edgeRequest, int requestIndex) {
         try {
             String jsonBody = gson.toJson(edgeRequest);
@@ -96,14 +88,14 @@ public class EdgeUser {
                     HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                System.out.println("EdgeUser " + id + ": 请求 " + requestIndex +
-                        " 成功发送 - 内容: " + edgeRequest.dataId);
+                System.out.println("EdgeUser " + id + ": request " + requestIndex +
+                        " success id: " + edgeRequest.dataId);
             } else {
-                System.out.println("EdgeUser " + id + ": HTTP错误 " + response.statusCode());
+                System.out.println("EdgeUser " + id + ": HTTP error " + response.statusCode());
             }
 
         } catch (Exception e) {
-            System.out.println("EdgeUser " + id + ": 请求失败 - " + e.getMessage());
+            System.out.println("EdgeUser " + id + ": failed - " + e.getMessage());
         }
     }
 
@@ -225,7 +217,7 @@ public class EdgeUser {
 
     // Generates requests based on a Zipf distribution focusing on the top 1/5 of the data
     private static void generateZipfDistributionSequence(List<Integer> sequence, int size, int min, int max, Random random) {
-        double exponent = 0.9; // Zipf指数
+        double exponent = 0.9;
 
         for (int i = 1; i <= size; i++) {
             double zipfValue = (1.0 / Math.pow(i, exponent));
@@ -233,11 +225,10 @@ public class EdgeUser {
             sequence.add(value);
         }
 
-        // 将Zipf值映射到0 ， max-1的范围
         List<Integer> mappedSequence = new ArrayList<>();
         for (int value : sequence) {
             int mappedValue = (int) (value * (max - min) / sequence.get(0));
-            mappedValue = Math.min(max, Math.max(min, mappedValue)); // 确保值在min和max之间
+            mappedValue = Math.min(max, Math.max(min, mappedValue));
             mappedSequence.add(mappedValue);
         }
 
@@ -250,7 +241,7 @@ public class EdgeUser {
     private List<Integer> generateLDAList(int userId, int size, int min, int max) {
         List<Integer> mappedSequence = new ArrayList<>();
         Random random = new Random();
-        //生成全部为unpopular data的request list
+
         if(userId % 2 == 0){
             for (int i = 0; i < size; i++) {
                 int randomNum = ThreadLocalRandom.current().nextInt(max-5, max);
@@ -259,10 +250,10 @@ public class EdgeUser {
         }else{
             //generate Zipf
             List<Integer> sequence= new ArrayList<>();
-            Random userRandom = new Random(userId); // 使用userId作为种子，以确保每个用户的序列不同
+            Random userRandom = new Random(userId);
 //        Random userRandom = new Random(); //
-//        double exponent = 1 + userRandom.nextDouble(); // 基于userId的随机Zipf指数
-            double exponent = 1.1; // 基于userId的随机Zipf指数
+//        double exponent = 1 + userRandom.nextDouble();
+            double exponent = 1.1;
 
             double sum = 0;
             for (int i = 1; i <= size; i++) {
@@ -275,17 +266,14 @@ public class EdgeUser {
                 sequence.add(value);
             }
 
-            // 将Zipf值映射到[min, max]的范围，考虑更多的随机性
-
             for (int value : sequence) {
-//            int mappedValue = value + userRandom.nextInt(max - min + 1); // 添加额外随机性
-                int mappedValue = value + userRandom.nextInt((max - min + 1) / 2); // 添加额外随机性
-                mappedValue = Math.min(max, Math.max(min, mappedValue)); // 确保值在min和max之间
+//            int mappedValue = value + userRandom.nextInt(max - min + 1); /
+                int mappedValue = value + userRandom.nextInt((max - min + 1) / 2);
+                mappedValue = Math.min(max, Math.max(min, mappedValue));
                 mappedSequence.add(mappedValue);
             }
 
-            // 乱序mappedSequence列表
-            Collections.shuffle(mappedSequence, userRandom); // 用相同的Random实例打乱顺序
+            Collections.shuffle(mappedSequence, userRandom);
         }
 
         return mappedSequence;
@@ -293,7 +281,7 @@ public class EdgeUser {
 
     private List<Integer> generateFLAList(int userId, int size, int min, int max) {
         List<Integer> mappedSequence = new ArrayList<>();
-        //生成全部为unpopular data的request list
+
         if(userId % 10 == 0){
             int unpopulardata = max - 1;
             for (int i = 0; i < size; i++) {
@@ -302,10 +290,10 @@ public class EdgeUser {
         }else{
             //generate Zipf
             List<Integer> sequence= new ArrayList<>();
-            Random userRandom = new Random(userId); // 使用userId作为种子，以确保每个用户的序列不同
+            Random userRandom = new Random(userId);
 //        Random userRandom = new Random(); //
-//        double exponent = 1 + userRandom.nextDouble(); // 基于userId的随机Zipf指数
-            double exponent = 1.1; // 基于userId的随机Zipf指数
+//        double exponent = 1 + userRandom.nextDouble();
+            double exponent = 1.1;
 
             double sum = 0;
             for (int i = 1; i <= size; i++) {
@@ -313,30 +301,20 @@ public class EdgeUser {
             }
 
             for (int i = 1; i <= size; i++) {
-                double zipfValue = (1.0 / Math.pow(i, exponent)) / sum;  // 归一化
+                double zipfValue = (1.0 / Math.pow(i, exponent)) / sum;
                 int value = (int) Math.round(min + (zipfValue * (max - min)));
                 sequence.add(value);
             }
-
-            // 将Zipf值映射到[min, max]的范围，考虑更多的随机性
-
             for (int value : sequence) {
-//            int mappedValue = value + userRandom.nextInt(max - min + 1); // 添加额外随机性
-                int mappedValue = value + userRandom.nextInt((max - min + 1) / 2); // 添加额外随机性
-                mappedValue = Math.min(max, Math.max(min, mappedValue)); // 确保值在min和max之间
+//            int mappedValue = value + userRandom.nextInt(max - min + 1);
+                int mappedValue = value + userRandom.nextInt((max - min + 1) / 2);
+                mappedValue = Math.min(max, Math.max(min, mappedValue));
                 mappedSequence.add(mappedValue);
             }
-
-            // 乱序mappedSequence列表
-            Collections.shuffle(mappedSequence, userRandom); // 用相同的Random实例打乱顺序
+            Collections.shuffle(mappedSequence, userRandom);
         }
-
         return mappedSequence;
     }
-
-
-
-
 
 }
 

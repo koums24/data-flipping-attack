@@ -17,15 +17,15 @@ public class DDCPA {
             int numUsers = 5;
             int numServers = 20;
             int totalRequests = 100;
-            double s = 1.0; // Zipf分布参数
-            int numRequestTypes = 200; // 请求类型数量
+            double s = 1.0;
+            int numRequestTypes = 200;
             //users request content_i
             Set<Integer>[] usersforContent = new HashSet[numRequestTypes];
             for (int i = 0; i < numRequestTypes; i++) {
                 usersforContent[i] = new HashSet<>();
             }
 
-            // 创建用户和服务器
+
             List<User> users = new ArrayList<>();
             List<Server> servers = new ArrayList<>();
             for (int i = 0; i < numUsers; i++) {
@@ -39,7 +39,6 @@ public class DDCPA {
 
             int currentTime = 0;
 
-            //设定攻击user
 //        users.get(0).setMalicious(true);
 //        users.get(1).setMalicious(true);
 //        users.get(2).setMalicious(true);
@@ -61,7 +60,7 @@ public class DDCPA {
                         Server server = servers.get(ThreadLocalRandom.current().nextInt(numServers));
                         user.sendRequest(server, request, currentTime);
                         usersforContent[request].add(user.getId());
-                        currentTime += ThreadLocalRandom.current().nextInt(1, 5); // 模拟时间流逝
+                        currentTime += ThreadLocalRandom.current().nextInt(1, 5);
                     }
 //                    System.out.println("user" + user.getId() + ", requests: " + requests);
                 } else {
@@ -72,7 +71,7 @@ public class DDCPA {
                         Server server = servers.get(ThreadLocalRandom.current().nextInt(numServers));
                         user.sendRequest(server, request, currentTime);
                         usersforContent[request].add(user.getId());
-                        currentTime += ThreadLocalRandom.current().nextInt(1, 5); // 模拟时间流逝
+                        currentTime += ThreadLocalRandom.current().nextInt(1, 5);
                     }
 //                    System.out.println("user attack" + user.getId() + ", requests: " + requests);
                 }
@@ -81,8 +80,8 @@ public class DDCPA {
 
 
             System.out.println(Arrays.toString(usersforContent));
-            //初始化popularity
-            double[] contentPopularity = new double[numRequestTypes]; // 创建 double 数组
+
+            double[] contentPopularity = new double[numRequestTypes];
             // Initialize all elements to 0.0
             for (int i = 0; i < contentPopularity.length; i++) {
                 contentPopularity[i] = 0.0;
@@ -95,10 +94,9 @@ public class DDCPA {
 
             Server server = servers.get(0);
             //TODO
-            //反转攻击
             newAttack(server, usersforContent);
 
-            // 计算每个content 的 requestRatios  r(c_i)
+            // requestRatios  r(c_i)
             for (int i = 0; i < numRequestTypes; i++) {
                 requestRatios[i] = Math.round((double) server.getRequestCount(i) / server.getTotalRequests() * 100.0) / 100.0;
             }
@@ -107,7 +105,7 @@ public class DDCPA {
                 increaseConstant[i] = (double) usersforContent[i].size() / numRequestTypes;
                 contentPopularity[i] = (double) contentPopularity[i] * (1 - Math.exp(-0.2)) + increaseConstant[i];
                 if (contentPopularity[i] == 0) {
-                    averageRequestIntensity[i] = 0; // 或者其他合适的默认值
+                    averageRequestIntensity[i] = 0;
                 } else {
                     averageRequestIntensity[i] = requestRatios[i] / contentPopularity[i];
                 }
@@ -142,23 +140,20 @@ public class DDCPA {
         List<Integer> requestListPerServer = server.getRequestListPerServer();
         List<Set<Integer>> usersSetforContent = Arrays.asList(usersforContent);
 //        System.out.println("usersSetforContent before: " + usersSetforContent);
-        // 统计每个元素的出现次数
         Map<Integer, Integer> frequencyMap = getFrequency(requestListPerServer);
 
-        // 将元素按照出现次数进行排序（从多到少）
+
         List<Map.Entry<Integer, Integer>> sortedEntries = new ArrayList<>(frequencyMap.entrySet());
         sortedEntries.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
 
-        // 按照出现次数最多和最少的互换，依次类推
         int size = sortedEntries.size();
         for (int i = 0; i < size / 2; i++) {
-            // 获取最多和最少的元素
+
             int maxKey = sortedEntries.get(i).getKey();
             int minKey = sortedEntries.get(size - 1 - i).getKey();
-            //请求content的userlist需同步交换
+
             Collections.swap(usersSetforContent, maxKey, minKey);
-//            System.out.println("usersSetforContent after: " + usersSetforContent);
-            // 互换元素的位置
+
             for (int j = 0; j < requestListPerServer.size(); j++) {
                 if (requestListPerServer.get(j) == maxKey) {
                     requestListPerServer.set(j, minKey);

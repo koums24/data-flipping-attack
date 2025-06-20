@@ -6,8 +6,8 @@ import java.util.*;
 public class DataProcessor {
 
     public static void main(String[] args) {
-        String inputFile = "AttackRatio Results ZIpf-diff.txt"; // 输入的txt文件名
-        String outputFile = "Set_1 AttackRatio Zipf-diff.txt"; // 输出的txt文件名
+        String inputFile = "AttackRatio Results ZIpf-diff.txt";
+        String outputFile = "Set_1 AttackRatio Zipf-diff.txt";
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
              BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
@@ -18,14 +18,14 @@ public class DataProcessor {
             String currentGroup = null;
             String currentType = null;
 
-            // 读取数据文件
+
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 if (line.contains("---- Average results")) {
-                    continue; // 跳过标题行
+                    continue;
                 }
 
-                // 处理不同的分组
+
                 if (line.startsWith("------ ")) {
                     currentGroup = line.split(" ")[1].replace("Safe", "").replace("Attack", "").trim();
                     currentType = line.contains("Safe") ? "Safe" : "Attack";
@@ -58,7 +58,7 @@ public class DataProcessor {
                 }
             }
 
-            // 输出处理结果
+
             for (String group : safeData.keySet()) {
                 if (attackData.containsKey(group)) {
                     Double[] safeMetrics = safeData.get(group);

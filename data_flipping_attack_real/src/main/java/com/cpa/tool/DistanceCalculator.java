@@ -37,7 +37,7 @@ public class DistanceCalculator {
                 Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
                         Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return EARTH_RADIUS * c; // 距离，单位：千米
+        return EARTH_RADIUS * c;
     }
 
     public static double distance(double lat1, double lng1, double lat2, double lng2) {

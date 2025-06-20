@@ -11,8 +11,8 @@ import static com.cpa.objectives.MetricsUtil.calRequestRatios;
 public class DDCPADefense {
     //return blacklist on this server
     public static void DDCPAdefenseModel(List<List<Integer>> blackListonServer, List<EdgeUser> users, int numContent, List<Integer> allRequests,  int serverId) {
-        //初始化popularity
-        double[] contentPopularity = new double[numContent]; // 创建 double 数组
+
+        double[] contentPopularity = new double[numContent];
         // Initialize all elements to 0.5
         for (int i = 0; i < contentPopularity.length; i++) {
             contentPopularity[i] = 0.5;
@@ -30,7 +30,7 @@ public class DDCPADefense {
 
             contentPopularity[i] = (double) contentPopularity[i] * (1 - Math.exp(-0.2)) + requestRatios[i];
             if (contentPopularity[i] == 0) {
-                averageRequestIntensity[i] = 0; // 或者其他合适的默认值
+                averageRequestIntensity[i] = 0;
             } else {
                 averageRequestIntensity[i] = requestRatios[i] / contentPopularity[i];
             }

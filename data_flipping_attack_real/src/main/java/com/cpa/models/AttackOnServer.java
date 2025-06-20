@@ -22,11 +22,11 @@ public class AttackOnServer {
         int numServers = 4;
 
         int requestPeruser = 100;
-        double s = 1.0; // Zipf分布参数
-        int numContent = 200; // 请求类型数量
+        double s = 1.0;
+        int numContent = 200;
 
         int time = 100;
-        // 创建用户和服务器
+
         List<User> users = new ArrayList<>();
         List<Server> servers = new ArrayList<>();
         for (int i = 0; i < numUsers; i++) {
@@ -43,7 +43,7 @@ public class AttackOnServer {
         }
 
         int currentTime = 0;
-        // 为每个用户生成请求序列并分配给服务器
+
 
 //            设定攻击user
 //            users.get(0).setMalicious(true);

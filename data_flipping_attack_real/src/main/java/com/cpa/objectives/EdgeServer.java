@@ -36,7 +36,6 @@ public class EdgeServer {
     public List<Integer> requestList = new ArrayList<>();
 
     public List<String> edgeServerUrls = new ArrayList<>();
-    // 新增HTTP相关字段
     private HttpServer httpServer;
     private final HttpClient httpClient;
     private final Gson gson;
@@ -49,38 +48,30 @@ public class EdgeServer {
         this.executor = Executors.newFixedThreadPool(20);
     }
 
-    // 添加HTTP服务器启动方法
     public void startHttpServer(int port) {
         try {
             HttpServer httpServer = HttpServer.create(new InetSocketAddress(port), 0);
             httpServer.createContext("/request", new RequestHandler());
             httpServer.setExecutor(Executors.newFixedThreadPool(10));
             httpServer.start();
-            System.out.println("EdgeServer " + id + " HTTP服务器启动在端口: " + port);
         } catch (IOException e) {
-            System.err.println("启动HTTP服务器失败: " + e.getMessage());
+            System.err.println(e.getMessage());
         }
     }
 
-    // 请求处理器
     class RequestHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equals(exchange.getRequestMethod())) {
-                // 读取请求体
                 String requestBody = readRequestBody(exchange);
 
-                // 解析为EdgeRequest对象
                 EdgeRequest edgeRequest = parseToEdgeRequest(requestBody);
 
                 if (edgeRequest != null) {
-                    // 处理请求
                     processEdgeRequest(edgeRequest);
 
-                    // 转发给控制服务器
                     forwardToControlServer(edgeRequest);
 
-                    // 发送响应
                     sendResponse(exchange, createSuccessResponse(edgeRequest));
                 } else {
                     sendErrorResponse(exchange, "Invalid request format");
@@ -91,7 +82,6 @@ public class EdgeServer {
         }
     }
 
-    // 读取HTTP请求体
     private String readRequestBody(HttpExchange exchange) throws IOException {
         StringBuilder requestBody = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
@@ -103,38 +93,27 @@ public class EdgeServer {
         }
         return requestBody.toString();
     }
-    // 解析JSON为EdgeRequest对象
     private EdgeRequest parseToEdgeRequest(String jsonString) {
         try {
             EdgeRequest edgeRequest = gson.fromJson(jsonString, EdgeRequest.class);
-            System.out.println("EdgeServer " + id + ": 解析请求 - 用户: " +
-                    edgeRequest.userId + " 服务器: " + edgeRequest.serverId +
-                    " 内容: " + edgeRequest.dataId);
             return edgeRequest;
         } catch (Exception e) {
-            System.err.println("EdgeServer " + id + ": 解析JSON失败 - " + e.getMessage());
+            System.err.println("EdgeServer " + id + ": error - " + e.getMessage());
             return null;
         }
     }
 
-    // 处理EdgeRequest
     private void processEdgeRequest(EdgeRequest edgeRequest) {
-        // 记录请求统计
-        System.out.println("EdgeServer " + id + ": 处理请求 - 用户: " +
-                edgeRequest.userId + " 内容: " + edgeRequest.dataId);
+        System.out.println("EdgeServer " + id + ": process : " +
+                edgeRequest.userId + " data: " + edgeRequest.dataId);
 
-        // 可以在这里添加缓存检查、内容获取等逻辑
-        // 例如：检查本地缓存是否有该内容
-        // 如果没有，从其他服务器获取
     }
 
-    // 转发请求到控制服务器
     private void forwardToControlServer(EdgeRequest edgeRequest) {
         executor.submit(() -> {
             try {
-                // 创建转发请求的数据结构
                 ForwardRequest forwardRequest = new ForwardRequest(
-                        id, // 当前EdgeServer的ID
+                        id,
                         edgeRequest,
                         System.currentTimeMillis()
                 );
@@ -152,18 +131,17 @@ public class EdgeServer {
                         HttpResponse.BodyHandlers.ofString());
 
                 if (response.statusCode() == 200) {
-                    System.out.println("EdgeServer " + id + ": 成功转发到控制服务器");
+                    System.out.println("EdgeServer " + id + ": success");
                 } else {
-                    System.err.println("EdgeServer " + id + ": 转发失败 - " + response.statusCode());
+                    System.err.println("EdgeServer " + id + ": fail - " + response.statusCode());
                 }
 
             } catch (Exception e) {
-                System.err.println("EdgeServer " + id + ": 转发到控制服务器失败 - " + e.getMessage());
+                System.err.println("EdgeServer " + id + ": fail - " + e.getMessage());
             }
         });
     }
 
-    // 创建成功响应
     private String createSuccessResponse(EdgeRequest edgeRequest) {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
@@ -174,7 +152,6 @@ public class EdgeServer {
         return gson.toJson(response);
     }
 
-    // 发送HTTP响应
     private void sendResponse(HttpExchange exchange, String response) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, response.getBytes().length);
@@ -183,7 +160,6 @@ public class EdgeServer {
         }
     }
 
-    // 发送错误响应
     private void sendErrorResponse(HttpExchange exchange, String errorMessage) throws IOException {
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("status", "error");
@@ -198,7 +174,6 @@ public class EdgeServer {
         }
     }
 
-    // 状态处理器
     class StatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -213,12 +188,10 @@ public class EdgeServer {
         }
     }
 
-    // 设置控制服务器URL
     public void setControlServerUrl(String url) {
         this.controlServerUrl = url;
     }
 
-    // 关闭服务器
     public void shutdown() {
         if (httpServer != null) {
             httpServer.stop(5);
@@ -233,12 +206,10 @@ public class EdgeServer {
 
 
     public void generateRequests(int totalRequests, int contentRange) {
-        //TODO 生成Zipf分布
         for (String user : coverUsers) {
             List<Request> userRequests = generateZipfRequests(user, totalRequests, contentRange);
             mergedRequests.addAll(userRequests);
         }
-
         //Zipf-Diverse
 //        for (String user : coverUsers) {
 //            List<Request> userRequests = generateZipfRequestsDiverse(user, totalRequests, contentRange-1);
@@ -252,10 +223,8 @@ public class EdgeServer {
 //            List<Request> userRequests;
 //
 //            if (i < midPoint) {
-//                // 前半部分用户生成Zipf分布请求
 //                userRequests = generateZipfRequests(user, totalRequests, contentRange);
 //            } else {
-//                // 后半部分用户生成正态分布请求
 //                userRequests = generateNormalRequest(user, totalRequests, 100, 30, 0, contentRange);
 ////                List<Request> requests = generateSinusoidalSequence(user, 100, 0, 199);
 //
@@ -266,7 +235,6 @@ public class EdgeServer {
     }
 
     public void generatePerdictRequests(int totalRequests, int contentRange) {
-        // all Zipf分布
         for (String user : coverUsers) {
             List<Request> userRequests = generateZipfRequests(user, totalRequests, contentRange);
             mergedRequests.addAll(userRequests);
@@ -278,18 +246,14 @@ public class EdgeServer {
 //            mergedRequests.addAll(userRequests);
 //        }
 
-//        half Zipf, half normal
 //        int midPoint = coverUsers.size() / 2;
 //        for (int i = 0; i < coverUsers.size(); i++) {
 //            String user = coverUsers.get(i);
 //            List<Request> userRequests;
 //
-//            //部分非Zipf && FLA requests
 //            if (i < midPoint) {
-//                // 前半部分用户生成Zipf分布请求
 //                userRequests = generateZipfRequests(user, totalRequests, contentRange);
 //            } else {
-//                // 后半部分用户生成正态分布请求
 //                userRequests = generateNormalRequest(user, totalRequests, 100, 30, 0, contentRange);
 ////                userRequests = generateFLARequest(user, totalRequests);
 ////                List<Request> requests = generateSinusoidalSequence(user, 100, 0, 199);
@@ -298,7 +262,6 @@ public class EdgeServer {
 //            mergedRequests.addAll(userRequests);
 //        }
 //
-        //合成Zipf
 //        int id =0;
 //        for (String user : coverUsers) {
 //            List<Request> userRequests = generateSynZipfRequest(user,id);
@@ -313,12 +276,12 @@ public class EdgeServer {
         Random random = new Random();
         long currentTime = System.currentTimeMillis();
 
-        ZipfDistribution zipf = new ZipfDistribution(contentRange, 1.0);  // 使用Zipf分布生成内容
+        ZipfDistribution zipf = new ZipfDistribution(contentRange, 1.0);
 
         for (int i = 0; i < totalRequests; i++) {
-            long interval = random.nextInt(1000) + 100; // 随机时间间隔
+            long interval = random.nextInt(1000) + 100; /
             currentTime += interval;
-            int content = zipf.sample();  // 生成1到contentRange之间的Zipf分布内容
+            int content = zipf.sample();
             requests.add(new Request(user, content, currentTime));
         }
 
@@ -356,18 +319,16 @@ public class EdgeServer {
         long currentTime = System.currentTimeMillis();
         List<Integer> contentList = IntStream.range(0, size)
                 .mapToObj(i -> {
-                    // 生成正态分布的浮点数
                     double value = mean + stdDev * random.nextGaussian();
-                    // 将值截断到指定范围
                     int intValue = (int) Math.round(value);
                     intValue = Math.max(lowerBound, Math.min(intValue, upperBound - 1));
                     return intValue;
                 })
                 .collect(Collectors.toList());
         for (int i = 0; i < contentList.size(); i++) {
-            long interval = random.nextInt(1000) + 100; // 随机时间间隔
+            long interval = random.nextInt(1000) + 100;
             currentTime += interval;
-            int content = contentList.get(i);  // 生成0到contentRange-1之间的Zipf分布内容
+            int content = contentList.get(i);
             requests.add(new Request(user, content, currentTime));
         }
         return requests;
@@ -379,13 +340,12 @@ public class EdgeServer {
         long currentTime = System.currentTimeMillis();
         List<Integer> contentList = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            //todo FLA发送的请求
             contentList.add(99);
         }
         for (int i = 0; i < contentList.size(); i++) {
-            long interval = random.nextInt(1000) + 100; // 随机时间间隔
+            long interval = random.nextInt(1000) + 100;
             currentTime += interval;
-            int content = contentList.get(i);  // 生成0到contentRange-1之间的Zipf分布内容
+            int content = contentList.get(i);
             requests.add(new Request(user, content, currentTime));
         }
         return requests;
@@ -399,9 +359,9 @@ public class EdgeServer {
         List<List<Integer>> spiltList = splitZipfDistribution(2000, 20, 100, 0, 199);
         List<Integer> contentList = spiltList.get(id);
         for (int i = 0; i < contentList.size(); i++) {
-            long interval = random.nextInt(1000) + 100; // 随机时间间隔
+            long interval = random.nextInt(1000) + 100;
             currentTime += interval;
-            int content = contentList.get(i);  // 生成0到contentRange-1之间的Zipf分布内容
+            int content = contentList.get(i);
             requests.add(new Request(user, content, currentTime));
         }
         return requests;
@@ -414,9 +374,9 @@ public class EdgeServer {
         long currentTime = System.currentTimeMillis();
         List<Integer> contentList = new ArrayList<>(Collections.nCopies(200, 99));;
         for (int i = 0; i < contentList.size(); i++) {
-            long interval = random.nextInt(1000) + 100; // 随机时间间隔
+            long interval = random.nextInt(1000) + 100;
             currentTime += interval;
-            int content = contentList.get(i);  // 生成1到contentRange之间的Zipf分布内容
+            int content = contentList.get(i);
             requests.add(new Request(user, content, currentTime));
         }
         return requests;
@@ -427,15 +387,14 @@ public class EdgeServer {
         Random random = new Random();
         long currentTime = System.currentTimeMillis();
         List<Request> requests = new ArrayList<>();
-        double amplitude = (max - min) / 2.0; // 振幅
-        double offset = (max + min) / 2.0; // 中心值
-        double frequency = (2 * Math.PI) / size; // 频率
+        double amplitude = (max - min) / 2.0;
+        double offset = (max + min) / 2.0;
+        double frequency = (2 * Math.PI) / size; /
 
         for (int i = 0; i < size; i++) {
-            long interval = random.nextInt(1000) + 100; // 随机时间间隔
+            long interval = random.nextInt(1000) + 100;
             currentTime += interval;
 
-            // 生成正弦波值
             double value = amplitude * Math.sin(frequency * i) + offset;
             int content = (int) Math.round(value);
             requests.add(new Request(user, content, currentTime));
@@ -448,15 +407,14 @@ public class EdgeServer {
     }
 
     public List<Request> generateSendSequence() {
-        // Step 5: 生成随机发送序列
+
         List<Request> shuffledRequests = new ArrayList<>(mergedRequests);
         Collections.shuffle(shuffledRequests);
-        System.out.println("随机发送序列：" + shuffledRequests);
+        System.out.println("sequence：" + shuffledRequests);
         return shuffledRequests;
     }
 
     public double calculateVariance(List<Request> requests) {
-        // 计算请求间隔的方差
         long previousTimestamp = 0;
         List<Long> intervals = new ArrayList<>();
 
@@ -476,17 +434,14 @@ public class EdgeServer {
     }
 
     public void swapRequestsBasedOnContentFrequency() {
-        // 统计每个 content 的出现频率
         Map<Integer, Long> frequencyMap = mergedRequests.stream()
                 .collect(Collectors.groupingBy(r -> r.content, Collectors.counting()));
 
-        // 按照频率对 Request 排序，频率最高的在前，最低的在后
         List<Integer> sortedContents = frequencyMap.entrySet().stream()
-                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // 频率从高到低排序
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
 
-        // 对调 sortedContents 中的内容
         int n = sortedContents.size();
         for (int i = 0; i < n / 2; i++) {
             int temp = sortedContents.get(i);
@@ -494,13 +449,11 @@ public class EdgeServer {
             sortedContents.set(n - 1 - i, temp);
         }
 
-        // 创建映射，从原频率 content 到对调后的 content
         Map<Integer, Integer> contentSwapMap = new HashMap<>();
         for (int i = 0; i < sortedContents.size(); i++) {
             contentSwapMap.put(frequencyMap.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()).get(i), sortedContents.get(i));
         }
 
-        // 将对调后的 content 映射回原来的 mergedRequests 列表中
         for (Request request : mergedRequests) {
             request.content = contentSwapMap.get(request.content);
         }

@@ -32,13 +32,13 @@ public class ControlServerMain {
     static String[] str = {"AverageLatency: ", "HitRatio: ", "Attacked HitRatio: ", "Covered User: "};
     private static List<String> mLines = new ArrayList<>();
 
-    // HTTP服务器相关
+
     private static HttpServer httpServer;
     private static final HttpClient httpClient = HttpClient.newBuilder().build();
     private static final Gson gson = new Gson();
     private static final ExecutorService executor = Executors.newFixedThreadPool(30);
 
-    // 系统参数
+
     private static int timePerRound = 1;
     private static int serversNumber = 20;
     private static int dataNumber = 30;
@@ -51,12 +51,11 @@ public class ControlServerMain {
     private static int networkArea = 20;
     private static int time = 20;
 
-    // 收集的请求数据
     private static final Map<Integer, Map<Integer, Integer>> serverRequestStats = new ConcurrentHashMap<>();
     private static final Map<Integer, String> edgeServerUrls = new ConcurrentHashMap<>();
     private static final Map<Integer, List<List<Integer>>> serverRequestLists = new ConcurrentHashMap<>();
 
-    // 系统组件
+
     private static List<EdgeServer> servers;
     private static List<EdgeUser> users;
     private static int[][] distanceMatrix;
@@ -69,24 +68,14 @@ public class ControlServerMain {
     public static void main(String[] args) {
         mLines.clear();
 
-        // 2. 初始化系统组件和参数
         initializeSystemComponents();
-        // 1. 启动ControlServer HTTP服务器
         startControlServer();
-        // 3. 启动EdgeServer和EdgeUser线程
         startEdgeSystemThreads();
-
-        // 4. 等待收集请求数据并运行缓存算法
         processVirtualTimeRequests(users);
-
-        // 5. 写入结果
         writeResults("HttpCacheExperiment");
-
-        // 6. 关闭服务器
         shutdown();
     }
 
-    // 启动ControlServer
     private static void startControlServer() {
         try {
             httpServer = HttpServer.create(new InetSocketAddress(8000), 0);
@@ -94,13 +83,13 @@ public class ControlServerMain {
             httpServer.createContext("/register_server", new RegisterServerHandler());
             httpServer.setExecutor(executor);
             httpServer.start();
-            System.out.println("ControlServer启动在端口: 8000");
+            System.out.println("ControlServer start port: 8000");
         } catch (IOException e) {
-            System.err.println("启动ControlServer失败: " + e.getMessage());
+            System.err.println("start ControlServer error: " + e.getMessage());
         }
     }
 
-    // 初始化系统组件
+
     private static void initializeSystemComponents() {
         spaceLimits = getSpaceLimits(100, maxSpace);
         dataSizes = getDataSizes(dataNumber);
@@ -110,7 +99,6 @@ public class ControlServerMain {
                 "density = " + density + "\t" + "latencyLimit = " + latencyLimit + "\t" +
                 "attackRatio = " + attackRatio);
 
-        // 生成随机服务器图
         RandomGraphGenerator graphGenerator = new RandomGraphGenerator(serversNumber, density);
         graphGenerator.createRandomGraph();
         distanceMatrix = graphGenerator.getRandomGraphDistanceMatrix();
@@ -123,7 +111,6 @@ public class ControlServerMain {
         users = userListGenerator.generateUserListFromRealWorldData(serversNumber, servers,
                 usersNumber, dataNumber, time);
 
-        // 计算用户收益矩阵
         userBenefits = new int[serversNumber][users.size()];
         for (int i = 0; i < serversNumber; i++) {
             for (int j = 0; j < users.size(); j++) {
@@ -137,7 +124,6 @@ public class ControlServerMain {
             }
         }
 
-        // 初始化当前存储
         currentStorage = new ArrayList<>();
         for (int data = 0; data < dataNumber; data++) {
             currentStorage.add(new ArrayList<>());
@@ -156,12 +142,10 @@ public class ControlServerMain {
     }
 
     private static void startEdgeSystemThreads() {
-        System.out.println("启动EdgeServer和EdgeUser线程...");
 
         List<Thread> serverThreads = new ArrayList<>();
         List<Thread> userThreads = new ArrayList<>();
 
-        // 启动EdgeServer线程
         for (int i = 0; i < servers.size(); i++) {
             final EdgeServer server = servers.get(i);
             final int port = 5001 + i;
@@ -171,10 +155,9 @@ public class ControlServerMain {
                 server.setId(finalI);
                 server.startHttpServer(port);
 
-                // 注册到ControlServer
                 registerServerToControl(server.getId(), "http://localhost:" + port);
 
-                System.out.println("EdgeServer " + server.getId() + " 运行中...");
+                System.out.println("EdgeServer " + server.getId() + " runing...");
             });
 
             serverThread.setName("EdgeServer-" + (i ));
@@ -182,14 +165,12 @@ public class ControlServerMain {
             serverThread.start();
         }
 
-        // 等待服务器启动
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
-        // 启动user线程
         for (int i = 0; i < users.size(); i++) {
             final EdgeUser user = users.get(i);
             final int userId = i;
@@ -200,11 +181,10 @@ public class ControlServerMain {
                     user.setTargetEdgeServer(targetServerUrl);
                     user.sendRequestsToEdgeServer(time);
 
-                    System.out.println("EdgeUser " + userId + " 完成所有请求发送");
+                    System.out.println("EdgeUser " + userId + "complete sending ");
                 } catch (Exception e) {
-                    System.out.println("EdgeUser " + userId + " 发送请求时出错: " + e.getMessage());
+                    System.out.println("EdgeUser " + userId + " error: " + e.getMessage());
                 } finally {
-                    // 关闭用户资源
                     user.shutdown();
                 }
             });
@@ -214,54 +194,42 @@ public class ControlServerMain {
             userThread.start();
         }
 
-        System.out.println("所有EdgeServer和EdgeUser线程已启动");
-
-        // 等待所有用户线程完成
         waitForAllUsersComplete(userThreads);
 
-        // 关闭服务器
         shutdownServers(serverThreads);
 
-        System.out.println("所有用户请求完成，系统关闭");
     }
 
-    // 等待所有用户线程完成
     private static void waitForAllUsersComplete(List<Thread> userThreads) {
-        System.out.println("等待所有用户完成请求发送...");
 
         for (Thread userThread : userThreads) {
             try {
-                userThread.join(); // 等待线程完成
-                System.out.println(userThread.getName() + " 已完成");
+                userThread.join();
+                System.out.println(userThread.getName() + " complete");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                System.out.println("等待用户线程时被中断: " + e.getMessage());
+                System.out.println("intercept: " + e.getMessage());
             }
         }
 
-        System.out.println("所有用户线程已完成");
     }
 
-    // 关闭服务器
     private static void shutdownServers(List<Thread> serverThreads) {
-        System.out.println("关闭EdgeServer...");
+        System.out.println("shut down EdgeServer...");
 
-        // 关闭服务器资源
         for (EdgeServer server : servers) {
             try {
-                server.shutdown(); // 需要在EdgeServer中实现shutdown方法
+                server.shutdown();
             } catch (Exception e) {
-                System.out.println("关闭EdgeServer " + server.getId() + " 时出错: " + e.getMessage());
+                System.out.println("shut down EdgeServer " + server.getId() + " error: " + e.getMessage());
             }
         }
 
-        // 中断服务器线程
         for (Thread serverThread : serverThreads) {
             serverThread.interrupt();
         }
     }
 
-    // 选择目标服务器
     private static String selectTargetServer(EdgeUser user, List<EdgeServer> servers) {
         if (!user.nearEdgeServers.isEmpty()) {
             int serverId =  user.nearEdgeServers.get((user.nearEdgeServers.size() - 1) / 2);
@@ -270,7 +238,7 @@ public class ControlServerMain {
         return "http://localhost:5001";
     }
 
-    // 注册服务器到ControlServer
+
     private static void registerServerToControl(int serverId, String serverUrl) {
         try {
             ServerRegistration registration = new ServerRegistration(serverId, serverUrl);
@@ -283,36 +251,31 @@ public class ControlServerMain {
                     .build();
 
             httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("服务器 " + serverId + " 已注册到ControlServer");
+            System.out.println("Edge server " + serverId + " connected to ControlServer");
 
         } catch (Exception e) {
-            System.err.println("注册服务器失败: " + e.getMessage());
+            System.err.println("connect error: " + e.getMessage());
         }
     }
 
     private static void processVirtualTimeRequests(List<EdgeUser> users) {
         for (int currentTime = 0; currentTime < 20; currentTime++) {
-            System.out.println("处理时间片: " + currentTime);
+            System.out.println("processing time : " + currentTime);
 
-            // 收集当前时间片所有用户的请求
             for (Integer serverId : serverRequestStats.keySet()) {
                 List<Integer> currentTimeRequests = getCurrentTimeRequests(serverId, currentTime, users);
 
                 if (currentTimeRequests != null && !currentTimeRequests.isEmpty()) {
-                    // 将当前时间片的请求添加到该服务器的请求历史中
                     serverRequestLists.computeIfAbsent(serverId, k -> new ArrayList<>())
                             .add(currentTimeRequests);
 
-                    System.out.println("服务器 " + serverId + " 在时间片 " + currentTime +
-                            " 收到 " + currentTimeRequests.size() + " 个请求");
+                    System.out.println("Edge server " + serverId + " in time " + currentTime +
+                            " receive " + currentTimeRequests.size() + " requests");
                 }
             }
         }
         int totalUsersNumber = users.size();
         List<List<Integer>> requestsList = new ArrayList<>();
-
-        //随时间生成request数量
-        //requestsList[时间步] = 用户编号列表
         for (int i = 0; i < time; i++) {
 
             int requestsNumber = usersNumber;
@@ -337,18 +300,13 @@ public class ControlServerMain {
 
     }
 
-    // 同时修改getCurrentTimeRequests方法
     private static List<Integer> getCurrentTimeRequests(int serverId, int currentTime, List<EdgeUser> users) {
         List<Integer> requests = new ArrayList<>();
 
-        // 遍历所有用户
         for (EdgeUser user : users) {
-            // 检查用户在当前时间是否有请求
             if (currentTime < user.dataList.size()) {
-                // 获取用户在currentTime时刻请求的数据ID
                 int requestedDataId = user.dataList.get(currentTime);
 
-                // 检查该用户是否向指定serverId发送请求
                 if (isUserRequestingToServer(user, serverId, currentTime)) {
                     requests.add(requestedDataId);
                 }
@@ -359,22 +317,18 @@ public class ControlServerMain {
     }
 
 
-    // 辅助方法：判断用户是否向指定服务器发送请求
     private static boolean isUserRequestingToServer(EdgeUser user, int serverId, int currentTime) {
-        // 方法1：如果用户有nearEdgeServers列表
         if (user.nearEdgeServers != null && !user.nearEdgeServers.isEmpty()) {
             int targetServerId = user.nearEdgeServers.get((user.nearEdgeServers.size() - 1) / 2);
             return targetServerId == serverId;
         }
 
-        return false; // 默认返回false
+        return false;
     }
 
-    // 为特定服务器运行缓存算法
     private static void runCacheAlgorithmsForServer(List<List<Integer>> requestsList,  Map<Integer, List<List<Integer>>> serverRequestLists) {
 
         try {
-            // 创建缓存模型
             CoverageFirstModel cfModel = new CoverageFirstModel(serversNumber, userBenefits,
                     distanceMatrix, spaceLimits, dataSizes, users, servers, dataNumber,
                     latencyLimit, time, requestsList, currentStorage, attackRatio);
@@ -387,28 +341,24 @@ public class ControlServerMain {
                     distanceMatrix, adjacencyMatrix, spaceLimits, dataSizes, users, servers,
                     dataNumber, latencyLimit, time, requestsList, currentStorage, attackRatio);
 
-            // 运行算法
             cfModel.runCoverage2();
 //            lfModel.runLatency();
 //            optimalModel.runOptimal();
 
             for (Integer serverId : serverRequestLists.keySet()) {
-                // 获取缓存策略结果并发送
                 List<Integer> cacheStrategy = extractCacheStrategy(cfModel);
                 sendCacheStrategyToServer(serverId, cacheStrategy);
 
-                // 记录结果
                 recordAlgorithmResults(serverId, cfModel, lfModel, optimalModel);
             }
 
         } catch (Exception e) {
-            System.err.println("运行缓存算法失败: " + e.getMessage());
+            System.err.println("calculate srategy failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
 
-    // HTTP请求处理器和其他方法...
     static class CollectRequestHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -433,44 +383,39 @@ public class ControlServerMain {
 
                 if (registration != null) {
                     edgeServerUrls.put(registration.serverId, registration.serverUrl);
-                    System.out.println("ControlServer: 注册服务器 " + registration.serverId);
+                    System.out.println("ControlServer: register " + registration.serverId);
                     sendResponse(exchange, "{\"status\":\"registered\"}");
                 }
             }
         }
     }
 
-    // 其他辅助方法...
     private static void processRequestBatch(ForwardRequest forwardRequest) {
         int serverId = forwardRequest.edgeServerId;
         EdgeRequest edgeRequest = forwardRequest.originalRequest;
         int contentId = edgeRequest.dataId;
         int userId = edgeRequest.userId;
 
-        // 更新服务器请求统计
         Map<Integer, Integer> serverStats = serverRequestStats.computeIfAbsent(serverId,
                 k -> new ConcurrentHashMap<>());
         serverStats.merge(contentId, 1, Integer::sum);
 
-        // 收集请求列表用于缓存策略计算
         List<List<Integer>> requestsList = serverRequestLists.computeIfAbsent(serverId,
                 k -> new ArrayList<>());
 
-        // 将用户ID添加到当前时间步的请求列表中
         if (requestsList.size() <= time) {
             for (int i = requestsList.size(); i <= time; i++) {
                 requestsList.add(new ArrayList<>());
             }
         }
 
-        // 添加用户请求到对应时间步
         int currentTimeStep = Math.min(time - 1, requestsList.size() - 1);
         if (!requestsList.get(currentTimeStep).contains(userId)) {
             requestsList.get(currentTimeStep).add(userId);
         }
 
-        System.out.println("ControlServer: 处理服务器 " + serverId + " 的请求 - 用户: " +
-                userId + " 内容: " + contentId);
+        System.out.println("ControlServer: process " + serverId + " 's request: " +
+                userId + " data: " + contentId);
     }
 
 
@@ -478,33 +423,26 @@ public class ControlServerMain {
         List<Integer> cacheContents = new ArrayList<>();
 
         try {
-            // 从模型的CurrentStorage中提取缓存策略
             List<List<Integer>> currentStorage = model.getCurrentStorage();
 
             if (currentStorage != null) {
-                // 遍历所有数据，找出被缓存的内容
                 for (int dataId = 0; dataId < currentStorage.size(); dataId++) {
                     List<Integer> serversWithData = currentStorage.get(dataId);
                     if (serversWithData != null && !serversWithData.isEmpty()) {
-                        // 如果这个数据被至少一个服务器缓存，则添加到策略中
                         cacheContents.add(dataId);
                     }
                 }
             }
 
-            // 如果无法从CurrentStorage获取，则基于请求统计生成简单策略
             if (cacheContents.isEmpty()) {
-                // 选择请求频率最高的前maxSpace个内容
                 Map<Integer, Integer> contentFreq = new HashMap<>();
 
-                // 统计内容请求频率
                 for (Map<Integer, Integer> serverStats : serverRequestStats.values()) {
                     for (Map.Entry<Integer, Integer> entry : serverStats.entrySet()) {
                         contentFreq.merge(entry.getKey(), entry.getValue(), Integer::sum);
                     }
                 }
 
-                // 按频率排序并选择top内容
                 cacheContents = contentFreq.entrySet().stream()
                         .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
                         .limit(maxSpace)
@@ -513,14 +451,13 @@ public class ControlServerMain {
             }
 
         } catch (Exception e) {
-            System.err.println("提取缓存策略失败: " + e.getMessage());
-            // 返回默认策略
+            System.err.println("error: " + e.getMessage());
             for (int i = 0; i < Math.min(maxSpace, dataNumber); i++) {
                 cacheContents.add(i);
             }
         }
 
-        System.out.println("提取的缓存策略: " + cacheContents);
+        System.out.println("caching stragety: " + cacheContents);
         return cacheContents;
     }
 
@@ -549,26 +486,24 @@ public class ControlServerMain {
                     HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                System.out.println("ControlServer: 成功发送缓存策略到服务器 " + serverId +
-                        " 策略: " + strategy);
+                System.out.println("ControlServer: send strategy to edge server " + serverId +
+                        " strategy: " + strategy);
 
-                // 记录发送的策略
                 String logEntry = "Server " + serverId + " Cache Strategy: " + strategy +
                         " at " + System.currentTimeMillis();
                 mLines.add(logEntry);
             } else {
-                System.err.println("ControlServer: 发送缓存策略失败，状态码: " + response.statusCode());
+                System.err.println("ControlServer: send error: " + response.statusCode());
             }
 
         } catch (Exception e) {
-            System.err.println("ControlServer: 发送缓存策略到服务器 " + serverId + " 失败 - " + e.getMessage());
+            System.err.println("ControlServer: send error " + serverId + " failed - " + e.getMessage());
         }
     }
 
     private static void recordAlgorithmResults(int serverId, CoverageFirstModel cf,
                                                LatencyFirstModel lf, OptimalModel opt) {
         try {
-            // 记录CFM结果
             double cfAvgLatency = cf.getAverageLatency().stream()
                     .mapToDouble(Double::doubleValue)
                     .average().orElse(0.0);
@@ -579,7 +514,6 @@ public class ControlServerMain {
                     .mapToDouble(Double::doubleValue)
                     .average().orElse(0.0);
 
-            // 记录LFM结果
             double lfAvgLatency = lf.getAverageLatency().stream()
                     .mapToDouble(Double::doubleValue)
                     .average().orElse(0.0);
@@ -590,7 +524,6 @@ public class ControlServerMain {
                     .mapToDouble(Double::doubleValue)
                     .average().orElse(0.0);
 
-            // 记录Optimal结果
             double optAvgLatency = opt.getAverageLatency().stream()
                     .mapToDouble(Double::doubleValue)
                     .average().orElse(0.0);
@@ -601,8 +534,7 @@ public class ControlServerMain {
                     .mapToDouble(Double::doubleValue)
                     .average().orElse(0.0);
 
-            // 添加到结果记录
-            mLines.add("=== 服务器 " + serverId + " 算法结果 ===");
+            mLines.add("=== Edge server " + serverId + " result ===");
             mLines.add("CFM Results:");
             mLines.add("  Average Latency: " + String.format("%.4f", cfAvgLatency));
             mLines.add("  Hit Ratio: " + String.format("%.4f", cfHitRatio));
@@ -620,13 +552,12 @@ public class ControlServerMain {
 
 
         } catch (Exception e) {
-            System.err.println("记录算法结果失败: " + e.getMessage());
+            System.err.println("record error: " + e.getMessage());
             mLines.add("Error recording results for server " + serverId + ": " + e.getMessage());
         }
     }
 
 
-    // 工具方法
     private static String readRequestBody(HttpExchange exchange) throws IOException {
         StringBuilder requestBody = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
@@ -672,9 +603,9 @@ public class ControlServerMain {
 
             Path file = Paths.get(fileName + " " + time + ".txt");
             Files.write(file, mLines, Charset.forName("UTF-8"));
-            System.out.println("结果已写入文件: " + file.toString());
+            System.out.println("write successed: " + file.toString());
         } catch (IOException e) {
-            System.err.println("写入文件失败: " + e.getMessage());
+            System.err.println("write failed: " + e.getMessage());
         }
     }
 
@@ -683,11 +614,10 @@ public class ControlServerMain {
             httpServer.stop(5);
         }
         executor.shutdown();
-        System.out.println("ControlServer已关闭");
+        System.out.println("ControlServer shut down");
     }
 }
 
-// 数据类
 class ForwardRequest {
     public int edgeServerId;
     public EdgeRequest originalRequest;

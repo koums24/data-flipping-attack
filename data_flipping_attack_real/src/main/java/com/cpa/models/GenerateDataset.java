@@ -19,11 +19,11 @@ public class GenerateDataset {
         int numUsers = 20;
         int numServers = 4;
         int requestPeruser = 100;
-        double s = 1.0; // Zipf分布参数
-        int numRequestTypes = 200; // 请求类型数量
+        double s = 1.0;
+        int numRequestTypes = 200;
         for (int j = 40; j < 80; j += 4) {
             for (int slice = j; slice < j + 4; slice++) {
-                // 创建用户和服务器
+
                 List<User> users = new ArrayList<>();
                 List<Server> servers = new ArrayList<>();
                 for (int i = 0; i < numUsers; i++) {
@@ -76,7 +76,7 @@ public class GenerateDataset {
                             Server server = servers.get(ThreadLocalRandom.current().nextInt(numServers));
                             user.sendRequest(server, request, currentTime);
                             usersforContent[request].add(user.getId());
-                            currentTime += ThreadLocalRandom.current().nextInt(1, 5); // 模拟时间流逝
+                            currentTime += ThreadLocalRandom.current().nextInt(1, 5);
                         }
                     } else {
                         //FLA
@@ -85,7 +85,7 @@ public class GenerateDataset {
 //                    Server server = servers.get(ThreadLocalRandom.current().nextInt(numServers));
 //                    user.sendRequest(server, request, currentTime);
 //                    usersforContent[request].add(user.getId());
-//                    currentTime += ThreadLocalRandom.current().nextInt(1, 5); // 模拟时间流逝
+//                    currentTime += ThreadLocalRandom.current().nextInt(1, 5);
 //                }
                         //flipping attack
                         List<Integer> requests = new ArrayList<>();
@@ -123,7 +123,7 @@ public class GenerateDataset {
 //                }
 //            }
 
-                // 创建存储请求比率 方差 时间间隔标准差的数组
+
                 double[] requestRatios = new double[numRequestTypes]; //M1 Request Ratio each content
                 double[] varianceIRI = new double[numRequestTypes]; //M2 Individual Request Intensity
                 double[] stdDevsRI = new double[numRequestTypes]; //M3 Standard Deviation of Request Intervals
@@ -131,18 +131,13 @@ public class GenerateDataset {
                 double[] increaseConstant = new double[numRequestTypes];//increaseConstant for calculate averageRequestIntensity
                 double[] averageRequestIntensity = new double[numRequestTypes]; //M4
 
-                //choose one server
-//            Server server = servers.get(0);
-
                 //TODO
                 //tamper distribution attack
 //            tamperDistributionAttack(servers.get(0), usersforContent);
 
-                // 计算每个content 的 request ratio
-
                 Server server = servers.get(0);
                 int totalRequests = server.getTotalRequests();
-                // 计算每个content 的 request ratio
+                // request ratio
                 for (int i = 0; i < numRequestTypes; i++) {
                     requestRatios[i] = Math.round((double) server.getRequestCount(i) / totalRequests * 1000.0) / 1000.0;
                 }
@@ -152,13 +147,11 @@ public class GenerateDataset {
                     varianceIRI[i] = calculatevarianceIRI(users, requestRatios, i);
                 }
 
-                // 计算并存储每个请求类型的时间间隔的标准差
                 for (int i = 0; i < numRequestTypes; i++) {
                     stdDevsRI[i] = Math.round((calculateStdDevOfIntervals(servers, i) / 1000) * 100) / 100.0;
                 }
 
-                //初始化popularity
-                double[] popularityCNN = new double[numRequestTypes]; // 创建 double 数组
+                double[] popularityCNN = new double[numRequestTypes];
                 // Initialize all elements to 0.0
                 for (int i = 0; i < popularityCNN.length; i++) {
                     popularityCNN[i] = 0.0;
@@ -168,7 +161,7 @@ public class GenerateDataset {
                     increaseConstant[i] = (double) usersforContent[i].size() / numRequestTypes;
                     popularityCNN[i] = popularityCNN[i] * (1 - Math.exp(-0.2)) + increaseConstant[i];
                     if (popularityCNN[i] == 0) {
-                        averageRequestIntensity[i] = 0; // 或者其他合适的默认值
+                        averageRequestIntensity[i] = 0;
                     } else {
                         averageRequestIntensity[i] = requestRatios[i] / popularityCNN[i];
                     }
@@ -177,7 +170,7 @@ public class GenerateDataset {
 //          prepare data set for CNN
                 String filePath = "timeslice" + slice + ".txt";
 
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) { // true 参数启用附加模式
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
                     for (int i = 0; i < numRequestTypes; i++) {
                         writer.write(String.valueOf(requestRatios[i]));
                         writer.newLine();
@@ -204,29 +197,26 @@ public class GenerateDataset {
         List<Set<Integer>> usersSetforContent = Arrays.asList(usersforContent);
         Map<Integer, List<Integer>> requestTimestamp = server.getRequestTimestamp();
 //        System.out.println("usersSetforContent before: " + usersSetforContent);
-        // 统计每个元素的出现次数
         Map<Integer, Integer> frequencyMap = getFrequency(requestListPerServer);
 
-        // 将元素按照出现次数进行排序（从多到少）
         List<Map.Entry<Integer, Integer>> sortedEntries = new ArrayList<>(frequencyMap.entrySet());
         sortedEntries.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
 
-        // 按照出现次数最多和最少的互换，依次类推
         int size = sortedEntries.size();
         for (int i = 0; i < size / 2; i++) {
-            // 获取最多和最少的元素
+
             int maxKey = sortedEntries.get(i).getKey();
             int minKey = sortedEntries.get(size - 1 - i).getKey();
-            //请求content的userlist需同步交换
+
             Collections.swap(usersSetforContent, maxKey, minKey);
-            //requestTimestamps同步交换
+
             List<Integer> maxKeyValue = requestTimestamp.get(maxKey);
             List<Integer> minKeyValue = requestTimestamp.get(minKey);
             requestTimestamp.put(maxKey, minKeyValue);
             requestTimestamp.put(minKey, maxKeyValue);
             server.setRequestTimestamps(requestTimestamp);
 //            System.out.println("usersSetforContent after: " + usersSetforContent);
-            // 互换元素的位置
+
             for (int j = 0; j < requestListPerServer.size(); j++) {
                 if (requestListPerServer.get(j) == maxKey) {
                     requestListPerServer.set(j, minKey);
@@ -307,7 +297,7 @@ public class GenerateDataset {
         return IRIperuser;
     }
 
-    // 计算数组的平均值
+
     public static double calculateMean(double[] array) {
         double sum = 0.0;
         for (double num : array) {
